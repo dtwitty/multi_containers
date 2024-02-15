@@ -1,73 +1,33 @@
 #![feature(impl_trait_in_assoc_type)]
+#![warn(missing_docs)]
 
-use std::collections::{btree_map, btree_set, BTreeMap, BTreeSet, hash_map, hash_set, HashMap, HashSet};
+
+pub
+mod sets;
+
+use std::collections::{btree_map, btree_set, BTreeMap, BTreeSet, HashMap};
 use std::hash::Hash;
+use sets::{Set, HashTableSet};
 
 
-trait Set<'a> {
-    type Elem;
-    type Iter: Iterator<Item=&'a Self::Elem> where Self::Elem: 'a;
-    fn new() -> Self;
-    fn insert(&mut self, value: Self::Elem) -> bool;
-    fn remove(&mut self, value: &Self::Elem) -> bool;
-    fn contains(&self, value: &Self::Elem) -> bool;
-    fn is_empty(&self) -> bool;
-    fn len(&self) -> usize;
-    fn iter(&'a self) -> Self::Iter;
-}
 
-#[derive(Debug, PartialEq, Eq)]
-struct HashTableSet<T: Hash + Eq> {
-    data: HashSet<T>,
-}
-
-impl<'a, T: Hash + Eq + 'a> Set<'a> for HashTableSet<T> {
-    type Elem = T;
-    type Iter = hash_set::Iter<'a, T>;
-    fn new() -> Self {
-        HashTableSet {
-            data: HashSet::new(),
-        }
-    }
-
-    fn insert(&mut self, value: Self::Elem) -> bool {
-        self.data.insert(value)
-    }
-
-    fn remove(&mut self, value: &Self::Elem) -> bool {
-        self.data.remove(value)
-    }
-
-    fn contains(&self, value: &Self::Elem) -> bool {
-        self.data.contains(value)
-    }
-
-    fn is_empty(&self) -> bool {
-        self.data.is_empty()
-    }
-
-    fn len(&self) -> usize {
-        self.data.len()
-    }
-
-    fn iter(&'a self) -> Self::Iter {
-        self.data.iter()
-    }
-}
 
 #[derive(Debug, PartialEq, Eq)]
 struct TreeSet<T> {
     data: BTreeSet<T>,
 }
 
-impl<'a, T: Ord + 'a> Set<'a> for TreeSet<T> {
-    type Elem = T;
-    type Iter = btree_set::Iter<'a, T>;
-    fn new() -> Self {
+impl <T: Ord> TreeSet<T> {
+    pub fn new() -> Self {
         TreeSet {
             data: BTreeSet::new(),
         }
     }
+}
+
+impl<'a, T: Ord + 'a> Set<'a> for TreeSet<T> {
+    type Elem = T;
+    type Iter = btree_set::Iter<'a, T>;
 
     fn insert(&mut self, value: Self::Elem) -> bool {
         self.data.insert(value)
@@ -91,6 +51,12 @@ impl<'a, T: Ord + 'a> Set<'a> for TreeSet<T> {
 
     fn iter(&'a self) -> Self::Iter {
         self.data.iter()
+    }
+}
+
+impl <T: Ord> Default for TreeSet<T> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -120,7 +86,7 @@ struct HashTableMap<K: Hash + Eq, V: Eq> {
 impl<'a, K: Hash + Eq + 'a, V: Eq + 'a> Map<'a> for HashTableMap<K, V> {
     type Key = K;
     type Val = V;
-    type Iter = hash_map::Iter<'a, K, V>;
+    type Iter = impl Iterator<Item=(&'a K, &'a V)> + 'a;
 
     fn new() -> Self {
         HashTableMap {
@@ -256,7 +222,7 @@ struct MultiMapImpl<M> {
     len: usize,
 }
 
-impl<'a, M, > MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + 'a, M::Val: Set<'a> + 'a {
+impl<'a, M, > MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + 'a, M::Val: Set<'a> + Default + 'a {
     type Key = M::Key;
     type Val = <<M as Map<'a>>::Val as Set<'a>>::Elem;
     type ValSet = M::Val;
@@ -272,7 +238,7 @@ impl<'a, M, > MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + 'a, M::Val: Se
     }
 
     fn insert(&mut self, key: Self::Key, value: Self::Val) -> bool {
-        let set = self.data.get_or_insert(key, || Self::ValSet::new());
+        let set = self.data.get_or_insert(key, || Default::default());
         let r = set.insert(value);
         if r {
             self.len += 1;
