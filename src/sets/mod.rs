@@ -5,12 +5,13 @@ use std::ops::RangeBounds;
 pub use self::hash_table_set::HashTableSet;
 pub use self::tree_set::TreeSet;
 
+/// A set of elements.
 pub trait Set<'a> {
     /// The type of elements in the set.
-    type Elem;
+    type Elem: 'a;
 
     /// The type of iterator over the elements of the set.
-    type Iter: Iterator<Item=&'a Self::Elem> where Self::Elem: 'a;
+    type Iter: Iterator<Item=&'a Self::Elem> + 'a;
 
     /// Inserts a value into the set. Returns `true` if the value was not already present.
     fn insert(&mut self, value: Self::Elem) -> bool;
@@ -32,7 +33,9 @@ pub trait Set<'a> {
 }
 
 pub trait SortedSet<'a>: Set<'a> {
-    type RangeIter: Iterator<Item=&'a Self::Elem> + 'a where Self::Elem: 'a;
+    /// The type of iterator over the elements of the set within a range.
+    type RangeIter: Iterator<Item=&'a Self::Elem> + 'a;
 
+    /// Returns an iterator over the elements of the set within the given range.
     fn range<R: RangeBounds<Self::Elem>>(&'a self, range: R) -> Self::RangeIter;
 }

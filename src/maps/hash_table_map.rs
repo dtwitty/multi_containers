@@ -13,6 +13,8 @@ impl<'a, K: Hash + Eq + 'a, V: Eq + 'a> Map<'a> for HashTableMap<K, V> {
     type Val = V;
     type Iter = impl Iterator<Item=(&'a K, &'a V)> + 'a;
     type IterMut = impl Iterator<Item=(&'a K, &'a mut V)> + 'a;
+    type KeyIter = impl Iterator<Item=&'a K> + 'a;
+    type ValIter = impl Iterator<Item=&'a V> + 'a;
 
     fn new() -> Self {
         HashTableMap {
@@ -58,5 +60,13 @@ impl<'a, K: Hash + Eq + 'a, V: Eq + 'a> Map<'a> for HashTableMap<K, V> {
 
     fn iter_mut(&'a mut self) -> Self::IterMut {
         self.data.iter_mut()
+    }
+
+    fn keys(&'a self) -> Self::KeyIter {
+        self.data.keys()
+    }
+
+    fn values(&'a self) -> Self::ValIter {
+        self.data.values()
     }
 }

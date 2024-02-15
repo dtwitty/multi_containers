@@ -64,9 +64,9 @@ impl<'a, M> MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + 'a, M::Val: Set<
     type Val = <<M as Map<'a>>::Val as Set<'a>>::Elem;
     type ValSet = M::Val;
     type Iter = M::Iter;
-    type FlatIter = impl Iterator<Item=(&'a Self::Key, &'a Self::Val)>;
-    type KeyIter = impl Iterator<Item=&'a Self::Key>;
+    type KeyIter = M::KeyIter;
     type ValIter = impl Iterator<Item=&'a Self::Val>;
+    type FlatIter = impl Iterator<Item=(&'a Self::Key, &'a Self::Val)>;
 
     fn new() -> Self {
         MultiMapImpl {
@@ -110,11 +110,11 @@ impl<'a, M> MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + 'a, M::Val: Set<
     }
 
     fn keys(&'a self) -> Self::KeyIter {
-        self.data.iter().map(|(k, _)| k)
+        self.data.keys()
     }
 
     fn values(&'a self) -> Self::ValIter {
-        self.data.iter().flat_map(|(_, s)| s.iter())
+        self.data.values().flat_map(|s| s.iter())
     }
 
     fn iter(&'a self) -> Self::Iter {
