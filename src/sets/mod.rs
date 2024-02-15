@@ -1,6 +1,7 @@
 mod hash_table_set;
 mod tree_set;
 
+use std::ops::RangeBounds;
 pub use self::hash_table_set::HashTableSet;
 pub use self::tree_set::TreeSet;
 
@@ -28,4 +29,10 @@ pub trait Set<'a> {
 
     /// Returns an iterator over the elements of the set.
     fn iter(&'a self) -> Self::Iter;
+}
+
+pub trait SortedSet<'a>: Set<'a> {
+    type RangeIter: Iterator<Item=&'a Self::Elem> + 'a where Self::Elem: 'a;
+
+    fn range<R: RangeBounds<Self::Elem>>(&'a self, range: R) -> Self::RangeIter;
 }

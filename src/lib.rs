@@ -6,15 +6,18 @@ pub
 mod sets;
 mod maps;
 
+use std::ops::RangeBounds;
 use sets::{Set, HashTableSet, TreeSet};
 use maps::{Map, HashTableMap, TreeMap};
+use crate::maps::SortedMap;
 
 
-trait MultiMap<'a> {
+pub trait MultiMap<'a> {
     type Key: 'a;
     type Val: 'a;
-    type ValSet: Set<'a>;
-    type Iter: Iterator<Item=(&'a Self::Key, &'a Self::Val)>;
+    type ValSet: Set<'a> + 'a;
+    type Iter: Iterator<Item=(&'a Self::Key, &'a Self::ValSet)>;
+    type FlatIter: Iterator<Item=(&'a Self::Key, &'a Self::Val)>;
     type KeyIter: Iterator<Item=&'a Self::Key>;
     type ValIter: Iterator<Item=&'a Self::Val>;
 
@@ -30,29 +33,38 @@ trait MultiMap<'a> {
 
     fn get(&self, key: &Self::Key) -> Option<&Self::ValSet>;
 
-    fn get_mut(&mut self, key: &Self::Key) -> Option<&mut Self::ValSet>;
-
     fn keys(&'a self) -> Self::KeyIter;
 
     fn values(&'a self) -> Self::ValIter;
 
     fn iter(&'a self) -> Self::Iter;
 
+    fn iter_flat(&'a self) -> Self::FlatIter;
+
     fn is_empty(&self) -> bool;
 
     fn len(&self) -> usize;
 }
+
+pub trait SortedMultiMap<'a>: MultiMap<'a> {
+    type RangeIter: Iterator<Item=(&'a Self::Key, &'a Self::ValSet)>;
+    type FlatRangeIter<R>: Iterator<Item=(&'a Self::Key, &'a Self::Val)> where R: RangeBounds<Self::Key>, Self: 'a;
+    fn range<R: RangeBounds<Self::Key>>(&'a self, range: R) -> Self::RangeIter;
+    fn flat_range<R: RangeBounds<Self::Key>>(&'a self, range: R) -> Self::FlatRangeIter<R>;
+}
+
 
 struct MultiMapImpl<M> {
     data: M,
     len: usize,
 }
 
-impl<'a, M, > MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + 'a, M::Val: Set<'a> + Default + 'a {
+impl<'a, M> MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + 'a, M::Val: Set<'a> + Default + 'a {
     type Key = M::Key;
     type Val = <<M as Map<'a>>::Val as Set<'a>>::Elem;
     type ValSet = M::Val;
-    type Iter = impl Iterator<Item=(&'a Self::Key, &'a Self::Val)>;
+    type Iter = M::Iter;
+    type FlatIter = impl Iterator<Item=(&'a Self::Key, &'a Self::Val)>;
     type KeyIter = impl Iterator<Item=&'a Self::Key>;
     type ValIter = impl Iterator<Item=&'a Self::Val>;
 
@@ -97,10 +109,6 @@ impl<'a, M, > MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + 'a, M::Val: Se
         self.data.get(key)
     }
 
-    fn get_mut(&mut self, key: &Self::Key) -> Option<&mut Self::ValSet> {
-        self.data.get_mut(key)
-    }
-
     fn keys(&'a self) -> Self::KeyIter {
         self.data.iter().map(|(k, _)| k)
     }
@@ -110,7 +118,11 @@ impl<'a, M, > MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + 'a, M::Val: Se
     }
 
     fn iter(&'a self) -> Self::Iter {
-        self.data.iter().flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
+        self.data.iter()
+    }
+
+    fn iter_flat(&'a self) -> Self::FlatIter {
+        self.iter().flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
     }
 
     fn is_empty(&self) -> bool {
@@ -122,7 +134,21 @@ impl<'a, M, > MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + 'a, M::Val: Se
     }
 }
 
-type SortedMultiMap<K, V> = MultiMapImpl<TreeMap<K, TreeSet<V>>>;
+impl<'a, M> SortedMultiMap<'a> for MultiMapImpl<M> where M: SortedMap<'a> + 'a, M::Val: Set<'a> + Default + 'a {
+    type RangeIter = M::RangeIter;
+    type FlatRangeIter<R> = impl Iterator<Item=(&'a Self::Key, &'a Self::Val)> where R: RangeBounds< Self::Key>, Self: 'a;
+
+    fn range<R: RangeBounds<Self::Key>>(&'a self, range: R) -> Self::RangeIter {
+        self.data.range(range)
+    }
+
+    fn flat_range<R: RangeBounds<Self::Key>>(&'a self, range: R) -> Self::FlatRangeIter<R> {
+        self.range(range).flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
+    }
+}
+
+
+type TreeMultiMap<K, V> = MultiMapImpl<TreeMap<K, TreeSet<V>>>;
 type HashMultiMap<K, V> = MultiMapImpl<HashTableMap<K, HashTableSet<V>>>;
 
 #[cfg(test)]
@@ -192,23 +218,6 @@ mod tests {
     }
 
     #[test]
-    fn test_hash_multi_map_get_mut() {
-        let mut map = HashMultiMap::<i32, i32>::new();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
-        assert_eq!(map.get_mut(&1).unwrap().insert(4), true);
-        assert_eq!(map.get_mut(&1).unwrap().insert(4), false);
-        assert_eq!(map.get_mut(&1).unwrap().remove(&4), true);
-        assert_eq!(map.get_mut(&1).unwrap().remove(&4), false);
-        assert_eq!(map.get_mut(&2).unwrap().insert(4), true);
-        assert_eq!(map.get_mut(&2).unwrap().insert(4), false);
-        assert_eq!(map.get_mut(&2).unwrap().remove(&4), true);
-        assert_eq!(map.get_mut(&2).unwrap().remove(&4), false);
-        assert_eq!(map.get_mut(&3), None);
-    }
-
-    #[test]
     fn test_hash_multi_map_keys() {
         let mut map = HashMultiMap::<i32, i32>::new();
         assert_eq!(map.insert(1, 2), true);
@@ -233,13 +242,13 @@ mod tests {
     }
 
     #[test]
-    fn test_hash_multi_map_iter() {
+    fn test_hash_multi_map_iter_flat() {
         let mut map = HashMultiMap::<i32, i32>::new();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
         let expected = vec![(&1, &2), (&1, &3), (&2, &3)];
-        let mut actual = map.iter().collect::<Vec<_>>();
+        let mut actual = map.iter_flat().collect::<Vec<_>>();
         actual.sort();
         assert_eq!(actual, expected);
     }
@@ -274,7 +283,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_insert() {
-        let mut map = SortedMultiMap::<i32, i32>::new();
+        let mut map = TreeMultiMap::<i32, i32>::new();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 2), false);
         assert_eq!(map.insert(1, 3), true);
@@ -284,7 +293,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_remove() {
-        let mut map = SortedMultiMap::<i32, i32>::new();
+        let mut map = TreeMultiMap::<i32, i32>::new();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -298,7 +307,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_contains() {
-        let mut map = SortedMultiMap::<i32, i32>::new();
+        let mut map = TreeMultiMap::<i32, i32>::new();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -311,7 +320,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_contains_key() {
-        let mut map = SortedMultiMap::<i32, i32>::new();
+        let mut map = TreeMultiMap::<i32, i32>::new();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -322,7 +331,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_get() {
-        let mut map = SortedMultiMap::<i32, i32>::new();
+        let mut map = TreeMultiMap::<i32, i32>::new();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -335,25 +344,8 @@ mod tests {
     }
 
     #[test]
-    fn test_sorted_multi_map_get_mut() {
-        let mut map = SortedMultiMap::<i32, i32>::new();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
-        assert_eq!(map.get_mut(&1).unwrap().insert(4), true);
-        assert_eq!(map.get_mut(&1).unwrap().insert(4), false);
-        assert_eq!(map.get_mut(&1).unwrap().remove(&4), true);
-        assert_eq!(map.get_mut(&1).unwrap().remove(&4), false);
-        assert_eq!(map.get_mut(&2).unwrap().insert(4), true);
-        assert_eq!(map.get_mut(&2).unwrap().insert(4), false);
-        assert_eq!(map.get_mut(&2).unwrap().remove(&4), true);
-        assert_eq!(map.get_mut(&2).unwrap().remove(&4), false);
-        assert_eq!(map.get_mut(&3), None);
-    }
-
-    #[test]
     fn test_sorted_multi_map_keys() {
-        let mut map = SortedMultiMap::<i32, i32>::new();
+        let mut map = TreeMultiMap::<i32, i32>::new();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -364,7 +356,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_values() {
-        let mut map = SortedMultiMap::<i32, i32>::new();
+        let mut map = TreeMultiMap::<i32, i32>::new();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -374,19 +366,19 @@ mod tests {
     }
 
     #[test]
-    fn test_sorted_multi_map_iter() {
-        let mut map = SortedMultiMap::<i32, i32>::new();
+    fn test_sorted_multi_map_iter_flat() {
+        let mut map = TreeMultiMap::<i32, i32>::new();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
         let expected = vec![(&1, &2), (&1, &3), (&2, &3)];
-        let actual = map.iter().collect::<Vec<_>>();
+        let actual = map.iter_flat().collect::<Vec<_>>();
         assert_eq!(actual, expected);
     }
 
     #[test]
     fn test_sorted_multi_map_is_empty() {
-        let mut map = SortedMultiMap::<i32, i32>::new();
+        let mut map = TreeMultiMap::<i32, i32>::new();
         assert_eq!(map.is_empty(), true);
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.is_empty(), false);
@@ -396,7 +388,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_len() {
-        let mut map = SortedMultiMap::<i32, i32>::new();
+        let mut map = TreeMultiMap::<i32, i32>::new();
         assert_eq!(map.len(), 0);
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.len(), 1);
@@ -411,4 +403,30 @@ mod tests {
         assert_eq!(map.remove(&2, &3), true);
         assert_eq!(map.len(), 0);
     }
+
+    #[test]
+    fn test_sorted_multi_map_range() {
+        let mut map = TreeMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        assert_eq!(map.insert(3, 4), true);
+        assert_eq!(map.insert(4, 5), true);
+
+        let expected = vec![&3, &4];
+        let actual = map.range(2..=3).flat_map(|(_, s)| s.iter()).collect::<Vec<_>>();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_sorted_multi_map_flat_range() {
+        let mut map = TreeMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        let expected = vec![(&1, &2), (&1, &3)];
+        let actual = map.flat_range(1..2).collect::<Vec<_>>();
+        assert_eq!(actual, expected);
+    }
 }
+

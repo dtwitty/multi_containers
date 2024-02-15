@@ -1,5 +1,6 @@
 use std::collections::BTreeSet;
-use crate::sets::Set;
+use std::ops::RangeBounds;
+use crate::sets::{Set, SortedSet};
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct TreeSet<T: Ord> {
@@ -40,5 +41,13 @@ impl<'a, T: Ord + 'a> Set<'a> for TreeSet<T> {
 
     fn iter(&'a self) -> Self::Iter {
         self.data.iter()
+    }
+}
+
+impl<'a, T: Ord + 'a> SortedSet<'a> for TreeSet<T> {
+    type RangeIter = impl Iterator<Item=&'a Self::Elem> + 'a;
+
+    fn range<R: RangeBounds<Self::Elem>>(&'a self, range: R) -> Self::RangeIter {
+        self.data.range(range)
     }
 }
