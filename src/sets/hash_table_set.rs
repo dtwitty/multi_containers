@@ -1,13 +1,13 @@
 use std::collections::HashSet;
+use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
 use crate::sets::Set;
 
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct HashTableSet<T: Hash + Eq> {
+pub struct HashTableSet<T> {
     data: HashSet<T>,
 }
 
-impl<T: Hash + Eq> HashTableSet<T> {
+impl<T> HashTableSet<T> {
     pub fn new() -> Self {
         HashTableSet {
             data: HashSet::new(),
@@ -15,9 +15,31 @@ impl<T: Hash + Eq> HashTableSet<T> {
     }
 }
 
-impl<T: Hash + Eq> Default for HashTableSet<T> {
+impl<T> Default for HashTableSet<T> {
     fn default() -> Self {
         HashTableSet::new()
+    }
+}
+
+impl<T: Clone> Clone for HashTableSet<T> {
+    fn clone(&self) -> Self {
+        HashTableSet {
+            data: self.data.clone(),
+        }
+    }
+}
+
+impl<T: Hash + Eq> PartialEq for HashTableSet<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.data.eq(&other.data)
+    }
+}
+
+impl<T: Hash + Eq> Eq for HashTableSet<T> {}
+
+impl<T: Debug> Debug for HashTableSet<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.data.fmt(f)
     }
 }
 

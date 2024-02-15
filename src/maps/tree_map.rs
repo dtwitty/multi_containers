@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
+use std::fmt::{Debug, Formatter};
 use crate::maps::{Map, SortedMap};
 
-#[derive(Debug)]
 pub struct TreeMap<K, V> {
     data: BTreeMap<K, V>,
 }
@@ -14,19 +14,33 @@ impl<K: Ord, V> TreeMap<K, V> {
     }
 }
 
-impl <K: Ord, V> Default for TreeMap<K, V> {
+impl<K: Ord, V> Default for TreeMap<K, V> {
     fn default() -> Self {
         TreeMap::new()
     }
 }
 
-impl <K: Ord, V: PartialEq> PartialEq for TreeMap<K, V> {
+impl<K: Ord, V: PartialEq> PartialEq for TreeMap<K, V> {
     fn eq(&self, other: &Self) -> bool {
         self.data.eq(&other.data)
     }
 }
 
-impl <K: Ord, V: Eq> Eq for TreeMap<K, V> {}
+impl<K: Ord, V: Eq> Eq for TreeMap<K, V> {}
+
+impl<K: Debug, V: Debug> Debug for TreeMap<K, V> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.data.fmt(f)
+    }
+}
+
+impl<K: Clone, V: Clone> Clone for TreeMap<K, V> {
+    fn clone(&self) -> Self {
+        TreeMap {
+            data: self.data.clone(),
+        }
+    }
+}
 
 impl<'a, K: Ord + 'a, V: 'a> Map<'a> for TreeMap<K, V> {
     type Key = K;

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
+use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
 use crate::maps::Map;
 
-#[derive(Debug)]
 pub struct HashTableMap<K, V> {
     data: HashMap<K, V>,
 }
@@ -15,19 +15,33 @@ impl<K, V> HashTableMap<K, V> {
     }
 }
 
-impl <K: Hash, V> Default for HashTableMap<K, V> {
+impl<K: Hash, V> Default for HashTableMap<K, V> {
     fn default() -> Self {
         HashTableMap::new()
     }
 }
 
-impl <K: Hash + Eq, V: PartialEq> PartialEq for HashTableMap<K, V> {
+impl<K: Hash + Eq, V: PartialEq> PartialEq for HashTableMap<K, V> {
     fn eq(&self, other: &Self) -> bool {
         self.data.eq(&other.data)
     }
 }
 
-impl <K: Hash + Eq, V: Eq> Eq for HashTableMap<K, V> {}
+impl<K: Hash + Eq, V: Eq> Eq for HashTableMap<K, V> {}
+
+impl<'a, K: Debug, V: Debug> Debug for HashTableMap<K, V> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.data.fmt(f)
+    }
+}
+
+impl <'a, K: Clone, V: Clone> Clone for HashTableMap<K, V> {
+    fn clone(&self) -> Self {
+        HashTableMap {
+            data: self.data.clone(),
+        }
+    }
+}
 
 
 impl<'a, K: Hash + Eq + 'a, V: 'a> Map<'a> for HashTableMap<K, V> {

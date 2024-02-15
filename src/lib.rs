@@ -7,6 +7,7 @@ mod sets;
 mod maps;
 mod builder;
 
+use std::fmt::{Debug, Formatter};
 use std::ops::RangeBounds;
 use sets::Set;
 use maps::Map;
@@ -53,18 +54,46 @@ pub trait SortedMultiMap<'a>: MultiMap<'a> {
 }
 
 
-#[derive(Debug, PartialEq, Eq)]
-struct MultiMapImpl<M: Default> {
+struct MultiMapImpl<M> {
     data: M,
     len: usize,
 }
 
-impl <M: Default> MultiMapImpl<M> {
+impl<M: Default> MultiMapImpl<M> {
     fn new() -> Self {
         MultiMapImpl {
             data: M::default(),
             len: 0,
         }
+    }
+}
+
+impl<M: Default> Default for MultiMapImpl<M> {
+    fn default() -> Self {
+        MultiMapImpl::new()
+    }
+}
+
+impl<M: PartialEq> PartialEq for MultiMapImpl<M> {
+    fn eq(&self, other: &Self) -> bool {
+        self.len == other.len && self.data == other.data
+    }
+}
+
+impl<M: Eq> Eq for MultiMapImpl<M> {}
+
+impl<M: Clone> Clone for MultiMapImpl<M> {
+    fn clone(&self) -> Self {
+        MultiMapImpl {
+            data: self.data.clone(),
+            len: self.len,
+        }
+    }
+}
+
+impl<M: Debug> Debug for MultiMapImpl<M> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.data.fmt(f)
     }
 }
 

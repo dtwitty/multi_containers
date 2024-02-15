@@ -1,13 +1,13 @@
 use std::collections::BTreeSet;
+use std::fmt::{Debug, Formatter};
 use std::ops::RangeBounds;
 use crate::sets::{Set, SortedSet};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TreeSet<T: Ord> {
+pub struct TreeSet<T> {
     data: BTreeSet<T>,
 }
 
-impl<T: Ord> TreeSet<T> {
+impl<T> TreeSet<T> {
     pub fn new() -> Self {
         TreeSet {
             data: BTreeSet::new(),
@@ -15,11 +15,34 @@ impl<T: Ord> TreeSet<T> {
     }
 }
 
-impl<T: Ord> Default for TreeSet<T> {
+impl<T> Default for TreeSet<T> {
     fn default() -> Self {
         TreeSet::new()
     }
 }
+
+impl<T: PartialEq> PartialEq for TreeSet<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.data.eq(&other.data)
+    }
+}
+
+impl<T: Eq> Eq for TreeSet<T> {}
+
+impl<T: Debug> Debug for TreeSet<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.data.fmt(f)
+    }
+}
+
+impl<T: Clone> Clone for TreeSet<T> {
+    fn clone(&self) -> Self {
+        TreeSet {
+            data: self.data.clone(),
+        }
+    }
+}
+
 
 impl<'a, T: Ord + 'a> Set<'a> for TreeSet<T> {
     type Elem = T;
