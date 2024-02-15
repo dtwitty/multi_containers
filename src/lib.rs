@@ -4,185 +4,11 @@
 
 pub
 mod sets;
+mod maps;
 
-use std::collections::{btree_map, btree_set, BTreeMap, BTreeSet, HashMap};
-use std::hash::Hash;
-use sets::{Set, HashTableSet};
+use sets::{Set, HashTableSet, TreeSet};
+use maps::{Map, HashTableMap, TreeMap};
 
-
-
-
-#[derive(Debug, PartialEq, Eq)]
-struct TreeSet<T> {
-    data: BTreeSet<T>,
-}
-
-impl <T: Ord> TreeSet<T> {
-    pub fn new() -> Self {
-        TreeSet {
-            data: BTreeSet::new(),
-        }
-    }
-}
-
-impl<'a, T: Ord + 'a> Set<'a> for TreeSet<T> {
-    type Elem = T;
-    type Iter = btree_set::Iter<'a, T>;
-
-    fn insert(&mut self, value: Self::Elem) -> bool {
-        self.data.insert(value)
-    }
-
-    fn remove(&mut self, value: &Self::Elem) -> bool {
-        self.data.remove(value)
-    }
-
-    fn contains(&self, value: &Self::Elem) -> bool {
-        self.data.contains(value)
-    }
-
-    fn is_empty(&self) -> bool {
-        self.data.is_empty()
-    }
-
-    fn len(&self) -> usize {
-        self.data.len()
-    }
-
-    fn iter(&'a self) -> Self::Iter {
-        self.data.iter()
-    }
-}
-
-impl <T: Ord> Default for TreeSet<T> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-
-trait Map<'a> {
-    type Key;
-    type Val;
-    type Iter: Iterator<Item=(&'a Self::Key, &'a Self::Val)> where Self::Key: 'a, Self::Val: 'a;
-    fn new() -> Self;
-    fn insert(&mut self, key: Self::Key, value: Self::Val) -> Option<Self::Val>;
-    fn get(&self, key: &Self::Key) -> Option<&Self::Val>;
-    fn get_mut(&mut self, key: &Self::Key) -> Option<&mut Self::Val>;
-    fn get_or_insert<F: FnOnce() -> Self::Val>(&mut self, key: Self::Key, make_value: F) -> &mut Self::Val;
-    fn remove(&mut self, key: &Self::Key) -> bool;
-    fn contains(&self, key: &Self::Key) -> bool;
-    fn is_empty(&self) -> bool;
-    fn len(&self) -> usize;
-    fn iter(&'a self) -> Self::Iter;
-}
-
-#[derive(Debug, PartialEq, Eq)]
-struct HashTableMap<K: Hash + Eq, V: Eq> {
-    data: HashMap<K, V>,
-}
-
-
-impl<'a, K: Hash + Eq + 'a, V: Eq + 'a> Map<'a> for HashTableMap<K, V> {
-    type Key = K;
-    type Val = V;
-    type Iter = impl Iterator<Item=(&'a K, &'a V)> + 'a;
-
-    fn new() -> Self {
-        HashTableMap {
-            data: HashMap::new(),
-        }
-    }
-
-    fn insert(&mut self, key: Self::Key, value: Self::Val) -> Option<Self::Val> {
-        self.data.insert(key, value)
-    }
-
-    fn get(&self, key: &Self::Key) -> Option<&Self::Val> {
-        self.data.get(key)
-    }
-
-    fn get_mut(&mut self, key: &Self::Key) -> Option<&mut Self::Val> {
-        self.data.get_mut(key)
-    }
-
-    fn get_or_insert<F: FnOnce() -> Self::Val>(&mut self, key: Self::Key, make_value: F) -> &mut Self::Val {
-        self.data.entry(key).or_insert_with(make_value)
-    }
-
-    fn remove(&mut self, key: &Self::Key) -> bool {
-        self.data.remove(key).is_some()
-    }
-
-    fn contains(&self, key: &Self::Key) -> bool {
-        self.data.contains_key(key)
-    }
-
-    fn is_empty(&self) -> bool {
-        self.data.is_empty()
-    }
-
-    fn len(&self) -> usize {
-        self.data.len()
-    }
-
-    fn iter(&'a self) -> Self::Iter {
-        self.data.iter()
-    }
-}
-
-#[derive(Debug, PartialEq, Eq)]
-struct TreeMap<K, V> {
-    data: BTreeMap<K, V>,
-}
-
-impl<'a, K: Ord + 'a, V: 'a> Map<'a> for TreeMap<K, V> {
-    type Key = K;
-    type Val = V;
-    type Iter = btree_map::Iter<'a, K, V>;
-
-    fn new() -> Self {
-        TreeMap {
-            data: BTreeMap::new(),
-        }
-    }
-
-    fn insert(&mut self, key: Self::Key, value: Self::Val) -> Option<Self::Val> {
-        self.data.insert(key, value)
-    }
-
-    fn get(&self, key: &Self::Key) -> Option<&Self::Val> {
-        self.data.get(key)
-    }
-
-    fn get_mut(&mut self, key: &Self::Key) -> Option<&mut Self::Val> {
-        self.data.get_mut(key)
-    }
-
-    fn get_or_insert<F: FnOnce() -> Self::Val>(&mut self, key: Self::Key, make_value: F) -> &mut Self::Val {
-        self.data.entry(key).or_insert_with(make_value)
-    }
-
-    fn remove(&mut self, key: &Self::Key) -> bool {
-        self.data.remove(key).is_some()
-    }
-
-    fn contains(&self, key: &Self::Key) -> bool {
-        self.data.contains_key(key)
-    }
-
-    fn is_empty(&self) -> bool {
-        self.data.is_empty()
-    }
-
-    fn len(&self) -> usize {
-        self.data.len()
-    }
-
-    fn iter(&'a self) -> Self::Iter {
-        self.data.iter()
-    }
-}
 
 trait MultiMap<'a> {
     type Key: 'a;
@@ -246,7 +72,7 @@ impl<'a, M, > MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + 'a, M::Val: Se
         r
     }
 
-    fn remove(&mut self, key: &M::Key, value: &<<M as Map<'a>>::Val as Set<'a>>::Elem) -> bool {
+    fn remove(&mut self, key: &Self::Key, value: &Self::Val) -> bool {
         if let Some(set) = self.data.get_mut(key) {
             if set.remove(value) {
                 self.len -= 1;
@@ -259,19 +85,19 @@ impl<'a, M, > MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + 'a, M::Val: Se
         false
     }
 
-    fn contains(&self, key: &M::Key, value: &<<M as Map<'a>>::Val as Set<'a>>::Elem) -> bool {
+    fn contains(&self, key: &Self::Key, value: &Self::Val) -> bool {
         self.data.get(key).map_or(false, |set| set.contains(value))
     }
 
-    fn contains_key(&self, key: &M::Key) -> bool {
+    fn contains_key(&self, key: &Self::Key) -> bool {
         self.data.contains(key)
     }
 
-    fn get(&self, key: &M::Key) -> Option<&M::Val> {
+    fn get(&self, key: &Self::Key) -> Option<&Self::ValSet> {
         self.data.get(key)
     }
 
-    fn get_mut(&mut self, key: &M::Key) -> Option<&mut M::Val> {
+    fn get_mut(&mut self, key: &Self::Key) -> Option<&mut Self::ValSet> {
         self.data.get_mut(key)
     }
 

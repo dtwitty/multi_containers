@@ -1,6 +1,8 @@
 mod hash_table_set;
+mod tree_set;
 
 pub use self::hash_table_set::HashTableSet;
+pub use self::tree_set::TreeSet;
 
 pub trait Set<'a> {
     /// The type of elements in the set.

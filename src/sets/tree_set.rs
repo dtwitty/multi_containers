@@ -1,23 +1,21 @@
-use std::collections::HashSet;
-use std::hash::Hash;
+use std::collections::BTreeSet;
 use crate::sets::Set;
 
-#[derive(Debug, PartialEq, Eq, Clone, Default)]
-pub struct HashTableSet<T: Hash + Eq> {
-    data: HashSet<T>,
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct TreeSet<T: Ord> {
+    data: BTreeSet<T>,
 }
 
-impl<T: Hash + Eq> HashTableSet<T> {
+impl<T: Ord> TreeSet<T> {
     pub fn new() -> Self {
-        HashTableSet {
-            data: HashSet::new(),
+        TreeSet {
+            data: BTreeSet::new(),
         }
     }
 }
 
-impl<'a, T: Hash + Eq + 'a> Set<'a> for HashTableSet<T> {
+impl<'a, T: Ord + 'a> Set<'a> for TreeSet<T> {
     type Elem = T;
-
     type Iter = impl Iterator<Item=&'a T> + 'a;
 
     fn insert(&mut self, value: Self::Elem) -> bool {
@@ -44,4 +42,3 @@ impl<'a, T: Hash + Eq + 'a> Set<'a> for HashTableSet<T> {
         self.data.iter()
     }
 }
-
