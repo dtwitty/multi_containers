@@ -1,3 +1,5 @@
+#![feature(impl_trait_in_assoc_type)]
+
 use std::collections::{btree_map, btree_set, BTreeMap, BTreeSet, hash_map, hash_set, HashMap, HashSet};
 use std::hash::Hash;
 
@@ -6,7 +8,7 @@ trait Set<'a> {
     type Elem;
     type Iter: Iterator<Item=&'a Self::Elem> where Self::Elem: 'a;
     fn new() -> Self;
-    fn insert(&mut self, value: Self::Elem);
+    fn insert(&mut self, value: Self::Elem) -> bool;
     fn remove(&mut self, value: &Self::Elem) -> bool;
     fn contains(&self, value: &Self::Elem) -> bool;
     fn is_empty(&self) -> bool;
@@ -14,7 +16,8 @@ trait Set<'a> {
     fn iter(&'a self) -> Self::Iter;
 }
 
-struct HashTableSet<T> {
+#[derive(Debug, PartialEq, Eq)]
+struct HashTableSet<T: Hash + Eq> {
     data: HashSet<T>,
 }
 
@@ -27,8 +30,8 @@ impl<'a, T: Hash + Eq + 'a> Set<'a> for HashTableSet<T> {
         }
     }
 
-    fn insert(&mut self, value: Self::Elem) {
-        self.data.insert(value);
+    fn insert(&mut self, value: Self::Elem) -> bool {
+        self.data.insert(value)
     }
 
     fn remove(&mut self, value: &Self::Elem) -> bool {
@@ -52,6 +55,7 @@ impl<'a, T: Hash + Eq + 'a> Set<'a> for HashTableSet<T> {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
 struct TreeSet<T> {
     data: BTreeSet<T>,
 }
@@ -65,8 +69,8 @@ impl<'a, T: Ord + 'a> Set<'a> for TreeSet<T> {
         }
     }
 
-    fn insert(&mut self, value: Self::Elem) {
-        self.data.insert(value);
+    fn insert(&mut self, value: Self::Elem) -> bool {
+        self.data.insert(value)
     }
 
     fn remove(&mut self, value: &Self::Elem) -> bool {
@@ -96,7 +100,7 @@ trait Map<'a> {
     type Val;
     type Iter: Iterator<Item=(&'a Self::Key, &'a Self::Val)> where Self::Key: 'a, Self::Val: 'a;
     fn new() -> Self;
-    fn insert(&mut self, key: Self::Key, value: Self::Val);
+    fn insert(&mut self, key: Self::Key, value: Self::Val) -> Option<Self::Val>;
     fn get(&self, key: &Self::Key) -> Option<&Self::Val>;
     fn get_mut(&mut self, key: &Self::Key) -> Option<&mut Self::Val>;
     fn get_or_insert<F: FnOnce() -> Self::Val>(&mut self, key: Self::Key, make_value: F) -> &mut Self::Val;
@@ -107,11 +111,13 @@ trait Map<'a> {
     fn iter(&'a self) -> Self::Iter;
 }
 
-struct HashTableMap<K, V> {
+#[derive(Debug, PartialEq, Eq)]
+struct HashTableMap<K: Hash + Eq, V: Eq> {
     data: HashMap<K, V>,
 }
 
-impl<'a, K: Hash + Eq + 'a, V: 'a> Map<'a> for HashTableMap<K, V> {
+
+impl<'a, K: Hash + Eq + 'a, V: Eq + 'a> Map<'a> for HashTableMap<K, V> {
     type Key = K;
     type Val = V;
     type Iter = hash_map::Iter<'a, K, V>;
@@ -122,8 +128,8 @@ impl<'a, K: Hash + Eq + 'a, V: 'a> Map<'a> for HashTableMap<K, V> {
         }
     }
 
-    fn insert(&mut self, key: Self::Key, value: Self::Val) {
-        self.data.insert(key, value);
+    fn insert(&mut self, key: Self::Key, value: Self::Val) -> Option<Self::Val> {
+        self.data.insert(key, value)
     }
 
     fn get(&self, key: &Self::Key) -> Option<&Self::Val> {
@@ -159,6 +165,7 @@ impl<'a, K: Hash + Eq + 'a, V: 'a> Map<'a> for HashTableMap<K, V> {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
 struct TreeMap<K, V> {
     data: BTreeMap<K, V>,
 }
@@ -174,8 +181,8 @@ impl<'a, K: Ord + 'a, V: 'a> Map<'a> for TreeMap<K, V> {
         }
     }
 
-    fn insert(&mut self, key: Self::Key, value: Self::Val) {
-        self.data.insert(key, value);
+    fn insert(&mut self, key: Self::Key, value: Self::Val) -> Option<Self::Val> {
+        self.data.insert(key, value)
     }
 
     fn get(&self, key: &Self::Key) -> Option<&Self::Val> {
@@ -211,25 +218,72 @@ impl<'a, K: Ord + 'a, V: 'a> Map<'a> for TreeMap<K, V> {
     }
 }
 
-struct MultiMap<M> {
-    data: M,
+trait MultiMap<'a> {
+    type Key: 'a;
+    type Val: 'a;
+    type ValSet: Set<'a>;
+    type Iter: Iterator<Item=(&'a Self::Key, &'a Self::Val)>;
+    type KeyIter: Iterator<Item=&'a Self::Key>;
+    type ValIter: Iterator<Item=&'a Self::Val>;
+
+    fn new() -> Self;
+
+    fn insert(&mut self, key: Self::Key, value: Self::Val) -> bool;
+
+    fn remove(&mut self, key: &Self::Key, value: &Self::Val) -> bool;
+
+    fn contains(&self, key: &Self::Key, value: &Self::Val) -> bool;
+
+    fn contains_key(&self, key: &Self::Key) -> bool;
+
+    fn get(&self, key: &Self::Key) -> Option<&Self::ValSet>;
+
+    fn get_mut(&mut self, key: &Self::Key) -> Option<&mut Self::ValSet>;
+
+    fn keys(&'a self) -> Self::KeyIter;
+
+    fn values(&'a self) -> Self::ValIter;
+
+    fn iter(&'a self) -> Self::Iter;
+
+    fn is_empty(&self) -> bool;
+
+    fn len(&self) -> usize;
 }
 
-impl<'a, M> MultiMap<M> where M: Map<'a> + 'a, M::Val: Set<'a> + 'a {
+struct MultiMapImpl<M> {
+    data: M,
+    len: usize,
+}
+
+impl<'a, M, > MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + 'a, M::Val: Set<'a> + 'a {
+    type Key = M::Key;
+    type Val = <<M as Map<'a>>::Val as Set<'a>>::Elem;
+    type ValSet = M::Val;
+    type Iter = impl Iterator<Item=(&'a Self::Key, &'a Self::Val)>;
+    type KeyIter = impl Iterator<Item=&'a Self::Key>;
+    type ValIter = impl Iterator<Item=&'a Self::Val>;
+
     fn new() -> Self {
-        MultiMap {
+        MultiMapImpl {
             data: M::new(),
+            len: 0,
         }
     }
 
-    fn insert(&mut self, key: M::Key, value: <<M as Map<'a>>::Val as Set<'a>>::Elem) {
-        let set = self.data.get_or_insert(key, || M::Val::new());
-        set.insert(value);
+    fn insert(&mut self, key: Self::Key, value: Self::Val) -> bool {
+        let set = self.data.get_or_insert(key, || Self::ValSet::new());
+        let r = set.insert(value);
+        if r {
+            self.len += 1;
+        }
+        r
     }
 
     fn remove(&mut self, key: &M::Key, value: &<<M as Map<'a>>::Val as Set<'a>>::Elem) -> bool {
         if let Some(set) = self.data.get_mut(key) {
             if set.remove(value) {
+                self.len -= 1;
                 if set.is_empty() {
                     self.data.remove(key);
                 }
@@ -255,12 +309,16 @@ impl<'a, M> MultiMap<M> where M: Map<'a> + 'a, M::Val: Set<'a> + 'a {
         self.data.get_mut(key)
     }
 
-    fn keys(&'a self) -> impl Iterator<Item=&'a M::Key> {
+    fn keys(&'a self) -> Self::KeyIter {
         self.data.iter().map(|(k, _)| k)
     }
 
-    fn values(&'a self) -> impl Iterator<Item=&'a <<M as Map<'a>>::Val as Set<'a>>::Elem> {
+    fn values(&'a self) -> Self::ValIter {
         self.data.iter().flat_map(|(_, s)| s.iter())
+    }
+
+    fn iter(&'a self) -> Self::Iter {
+        self.data.iter().flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
     }
 
     fn is_empty(&self) -> bool {
@@ -268,61 +326,297 @@ impl<'a, M> MultiMap<M> where M: Map<'a> + 'a, M::Val: Set<'a> + 'a {
     }
 
     fn len(&self) -> usize {
-        self.data.len()
-    }
-
-    fn iter(&'a self) -> impl Iterator<Item=(&'a M::Key, &'a <<M as Map<'a>>::Val as Set<'a>>::Elem)> {
-        self.data.iter().flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
+        self.len
     }
 }
+
+type SortedMultiMap<K, V> = MultiMapImpl<TreeMap<K, TreeSet<V>>>;
+type HashMultiMap<K, V> = MultiMapImpl<HashTableMap<K, HashTableSet<V>>>;
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_hash_multi_map() {
-        let mut multi_map: MultiMap<HashTableMap<_, HashTableSet<_>>> = MultiMap::new();
-        multi_map.insert(1, 1);
-        multi_map.insert(1, 2);
-        multi_map.insert(2, 1);
-        multi_map.insert(2, 2);
-        assert_eq!(multi_map.len(), 2);
-        assert_eq!(multi_map.contains(&1, &1), true);
-        assert_eq!(multi_map.contains(&1, &2), true);
-        assert_eq!(multi_map.contains(&2, &1), true);
-        assert_eq!(multi_map.contains(&2, &2), true);
-        assert_eq!(multi_map.contains(&3, &1), false);
-        assert_eq!(multi_map.contains(&3, &2), false);
-        assert_eq!(multi_map.contains(&4, &1), false);
-        assert_eq!(multi_map.contains(&4, &2), false);
-        multi_map.remove(&1, &1);
-        multi_map.remove(&1, &2);
-        multi_map.remove(&2, &1);
-        multi_map.remove(&2, &2);
-        assert_eq!(multi_map.len(), 0);
+    fn test_hash_multi_map_insert() {
+        let mut map = HashMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 2), false);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        assert_eq!(map.insert(2, 3), false);
     }
 
     #[test]
-    fn test_sorted_multi_map() {
-        let mut multi_map: MultiMap<TreeMap<_, TreeSet<_>>> = MultiMap::new();
-        multi_map.insert(1, 1);
-        multi_map.insert(1, 2);
-        multi_map.insert(2, 1);
-        multi_map.insert(2, 2);
-        assert_eq!(multi_map.len(), 2);
-        assert_eq!(multi_map.contains(&1, &1), true);
-        assert_eq!(multi_map.contains(&1, &2), true);
-        assert_eq!(multi_map.contains(&2, &1), true);
-        assert_eq!(multi_map.contains(&2, &2), true);
-        assert_eq!(multi_map.contains(&3, &1), false);
-        assert_eq!(multi_map.contains(&3, &2), false);
-        assert_eq!(multi_map.contains(&4, &1), false);
-        assert_eq!(multi_map.contains(&4, &2), false);
-        multi_map.remove(&1, &1);
-        multi_map.remove(&1, &2);
-        multi_map.remove(&2, &1);
-        multi_map.remove(&2, &2);
-        assert_eq!(multi_map.len(), 0);
+    fn test_hash_multi_map_remove() {
+        let mut map = HashMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        assert_eq!(map.remove(&1, &2), true);
+        assert_eq!(map.remove(&1, &2), false);
+        assert_eq!(map.remove(&1, &3), true);
+        assert_eq!(map.remove(&1, &3), false);
+        assert_eq!(map.remove(&2, &3), true);
+        assert_eq!(map.remove(&2, &3), false);
+    }
+
+    #[test]
+    fn test_hash_multi_map_contains() {
+        let mut map = HashMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        assert_eq!(map.contains(&1, &2), true);
+        assert_eq!(map.contains(&1, &3), true);
+        assert_eq!(map.contains(&2, &3), true);
+        assert_eq!(map.contains(&1, &4), false);
+        assert_eq!(map.contains(&2, &4), false);
+    }
+
+    #[test]
+    fn test_hash_multi_map_contains_key() {
+        let mut map = HashMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        assert_eq!(map.contains_key(&1), true);
+        assert_eq!(map.contains_key(&2), true);
+        assert_eq!(map.contains_key(&3), false);
+    }
+
+    #[test]
+    fn test_hash_multi_map_get() {
+        let mut map = HashMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        assert_eq!(map.get(&1).unwrap().contains(&2), true);
+        assert_eq!(map.get(&1).unwrap().contains(&3), true);
+        assert_eq!(map.get(&2).unwrap().contains(&3), true);
+        assert_eq!(map.get(&1).unwrap().contains(&4), false);
+        assert_eq!(map.get(&2).unwrap().contains(&4), false);
+        assert_eq!(map.get(&3), None);
+    }
+
+    #[test]
+    fn test_hash_multi_map_get_mut() {
+        let mut map = HashMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        assert_eq!(map.get_mut(&1).unwrap().insert(4), true);
+        assert_eq!(map.get_mut(&1).unwrap().insert(4), false);
+        assert_eq!(map.get_mut(&1).unwrap().remove(&4), true);
+        assert_eq!(map.get_mut(&1).unwrap().remove(&4), false);
+        assert_eq!(map.get_mut(&2).unwrap().insert(4), true);
+        assert_eq!(map.get_mut(&2).unwrap().insert(4), false);
+        assert_eq!(map.get_mut(&2).unwrap().remove(&4), true);
+        assert_eq!(map.get_mut(&2).unwrap().remove(&4), false);
+        assert_eq!(map.get_mut(&3), None);
+    }
+
+    #[test]
+    fn test_hash_multi_map_keys() {
+        let mut map = HashMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        let expected = vec![&1, &2];
+        let mut actual = map.keys().collect::<Vec<_>>();
+        actual.sort();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_hash_multi_map_values() {
+        let mut map = HashMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        let expected = vec![&2, &3, &3];
+        let mut actual = map.values().collect::<Vec<_>>();
+        actual.sort();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_hash_multi_map_iter() {
+        let mut map = HashMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        let expected = vec![(&1, &2), (&1, &3), (&2, &3)];
+        let mut actual = map.iter().collect::<Vec<_>>();
+        actual.sort();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_hash_multi_map_is_empty() {
+        let mut map = HashMultiMap::<i32, i32>::new();
+        assert_eq!(map.is_empty(), true);
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.is_empty(), false);
+        assert_eq!(map.remove(&1, &2), true);
+        assert_eq!(map.is_empty(), true);
+    }
+
+    #[test]
+    fn test_hash_multi_map_len() {
+        let mut map = HashMultiMap::<i32, i32>::new();
+        assert_eq!(map.len(), 0);
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.len(), 1);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.len(), 2);
+        assert_eq!(map.insert(2, 3), true);
+        assert_eq!(map.len(), 3);
+        assert_eq!(map.remove(&1, &2), true);
+        assert_eq!(map.len(), 2);
+        assert_eq!(map.remove(&1, &3), true);
+        assert_eq!(map.len(), 1);
+        assert_eq!(map.remove(&2, &3), true);
+        assert_eq!(map.len(), 0);
+    }
+
+    #[test]
+    fn test_sorted_multi_map_insert() {
+        let mut map = SortedMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 2), false);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        assert_eq!(map.insert(2, 3), false);
+    }
+
+    #[test]
+    fn test_sorted_multi_map_remove() {
+        let mut map = SortedMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        assert_eq!(map.remove(&1, &2), true);
+        assert_eq!(map.remove(&1, &2), false);
+        assert_eq!(map.remove(&1, &3), true);
+        assert_eq!(map.remove(&1, &3), false);
+        assert_eq!(map.remove(&2, &3), true);
+        assert_eq!(map.remove(&2, &3), false);
+    }
+
+    #[test]
+    fn test_sorted_multi_map_contains() {
+        let mut map = SortedMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        assert_eq!(map.contains(&1, &2), true);
+        assert_eq!(map.contains(&1, &3), true);
+        assert_eq!(map.contains(&2, &3), true);
+        assert_eq!(map.contains(&1, &4), false);
+        assert_eq!(map.contains(&2, &4), false);
+    }
+
+    #[test]
+    fn test_sorted_multi_map_contains_key() {
+        let mut map = SortedMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        assert_eq!(map.contains_key(&1), true);
+        assert_eq!(map.contains_key(&2), true);
+        assert_eq!(map.contains_key(&3), false);
+    }
+
+    #[test]
+    fn test_sorted_multi_map_get() {
+        let mut map = SortedMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        assert_eq!(map.get(&1).unwrap().contains(&2), true);
+        assert_eq!(map.get(&1).unwrap().contains(&3), true);
+        assert_eq!(map.get(&2).unwrap().contains(&3), true);
+        assert_eq!(map.get(&1).unwrap().contains(&4), false);
+        assert_eq!(map.get(&2).unwrap().contains(&4), false);
+        assert_eq!(map.get(&3), None);
+    }
+
+    #[test]
+    fn test_sorted_multi_map_get_mut() {
+        let mut map = SortedMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        assert_eq!(map.get_mut(&1).unwrap().insert(4), true);
+        assert_eq!(map.get_mut(&1).unwrap().insert(4), false);
+        assert_eq!(map.get_mut(&1).unwrap().remove(&4), true);
+        assert_eq!(map.get_mut(&1).unwrap().remove(&4), false);
+        assert_eq!(map.get_mut(&2).unwrap().insert(4), true);
+        assert_eq!(map.get_mut(&2).unwrap().insert(4), false);
+        assert_eq!(map.get_mut(&2).unwrap().remove(&4), true);
+        assert_eq!(map.get_mut(&2).unwrap().remove(&4), false);
+        assert_eq!(map.get_mut(&3), None);
+    }
+
+    #[test]
+    fn test_sorted_multi_map_keys() {
+        let mut map = SortedMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        let expected = vec![&1, &2];
+        let actual = map.keys().collect::<Vec<_>>();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_sorted_multi_map_values() {
+        let mut map = SortedMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        let expected = vec![&2, &3, &3];
+        let actual = map.values().collect::<Vec<_>>();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_sorted_multi_map_iter() {
+        let mut map = SortedMultiMap::<i32, i32>::new();
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.insert(2, 3), true);
+        let expected = vec![(&1, &2), (&1, &3), (&2, &3)];
+        let actual = map.iter().collect::<Vec<_>>();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_sorted_multi_map_is_empty() {
+        let mut map = SortedMultiMap::<i32, i32>::new();
+        assert_eq!(map.is_empty(), true);
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.is_empty(), false);
+        assert_eq!(map.remove(&1, &2), true);
+        assert_eq!(map.is_empty(), true);
+    }
+
+    #[test]
+    fn test_sorted_multi_map_len() {
+        let mut map = SortedMultiMap::<i32, i32>::new();
+        assert_eq!(map.len(), 0);
+        assert_eq!(map.insert(1, 2), true);
+        assert_eq!(map.len(), 1);
+        assert_eq!(map.insert(1, 3), true);
+        assert_eq!(map.len(), 2);
+        assert_eq!(map.insert(2, 3), true);
+        assert_eq!(map.len(), 3);
+        assert_eq!(map.remove(&1, &2), true);
+        assert_eq!(map.len(), 2);
+        assert_eq!(map.remove(&1, &3), true);
+        assert_eq!(map.len(), 1);
+        assert_eq!(map.remove(&2, &3), true);
+        assert_eq!(map.len(), 0);
     }
 }
