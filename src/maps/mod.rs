@@ -26,7 +26,6 @@ pub trait Map<'a> {
     /// The type of iterator over the values of the map.
     type ValIter: Iterator<Item=&'a Self::Val> + 'a;
 
-    fn new() -> Self;
     fn insert(&mut self, key: Self::Key, value: Self::Val) -> Option<Self::Val>;
     fn get(&self, key: &Self::Key) -> Option<&Self::Val>;
     fn get_mut(&mut self, key: &Self::Key) -> Option<&mut Self::Val>;

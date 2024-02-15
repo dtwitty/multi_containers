@@ -2,25 +2,41 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use crate::maps::Map;
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct HashTableMap<K: Hash + Eq, V: Eq> {
+#[derive(Debug)]
+pub struct HashTableMap<K, V> {
     data: HashMap<K, V>,
 }
 
+impl<K, V> HashTableMap<K, V> {
+    pub fn new() -> Self {
+        HashTableMap {
+            data: HashMap::new(),
+        }
+    }
+}
 
-impl<'a, K: Hash + Eq + 'a, V: Eq + 'a> Map<'a> for HashTableMap<K, V> {
+impl <K: Hash, V> Default for HashTableMap<K, V> {
+    fn default() -> Self {
+        HashTableMap::new()
+    }
+}
+
+impl <K: Hash + Eq, V: PartialEq> PartialEq for HashTableMap<K, V> {
+    fn eq(&self, other: &Self) -> bool {
+        self.data.eq(&other.data)
+    }
+}
+
+impl <K: Hash + Eq, V: Eq> Eq for HashTableMap<K, V> {}
+
+
+impl<'a, K: Hash + Eq + 'a, V: 'a> Map<'a> for HashTableMap<K, V> {
     type Key = K;
     type Val = V;
     type Iter = impl Iterator<Item=(&'a K, &'a V)> + 'a;
     type IterMut = impl Iterator<Item=(&'a K, &'a mut V)> + 'a;
     type KeyIter = impl Iterator<Item=&'a K> + 'a;
     type ValIter = impl Iterator<Item=&'a V> + 'a;
-
-    fn new() -> Self {
-        HashTableMap {
-            data: HashMap::new(),
-        }
-    }
 
     fn insert(&mut self, key: Self::Key, value: Self::Val) -> Option<Self::Val> {
         self.data.insert(key, value)

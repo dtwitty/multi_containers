@@ -1,10 +1,32 @@
 use std::collections::BTreeMap;
 use crate::maps::{Map, SortedMap};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug)]
 pub struct TreeMap<K, V> {
     data: BTreeMap<K, V>,
 }
+
+impl<K: Ord, V> TreeMap<K, V> {
+    pub fn new() -> Self {
+        TreeMap {
+            data: BTreeMap::new(),
+        }
+    }
+}
+
+impl <K: Ord, V> Default for TreeMap<K, V> {
+    fn default() -> Self {
+        TreeMap::new()
+    }
+}
+
+impl <K: Ord, V: PartialEq> PartialEq for TreeMap<K, V> {
+    fn eq(&self, other: &Self) -> bool {
+        self.data.eq(&other.data)
+    }
+}
+
+impl <K: Ord, V: Eq> Eq for TreeMap<K, V> {}
 
 impl<'a, K: Ord + 'a, V: 'a> Map<'a> for TreeMap<K, V> {
     type Key = K;
@@ -14,11 +36,6 @@ impl<'a, K: Ord + 'a, V: 'a> Map<'a> for TreeMap<K, V> {
     type KeyIter = impl Iterator<Item=&'a K> + 'a;
     type ValIter = impl Iterator<Item=&'a V> + 'a;
 
-    fn new() -> Self {
-        TreeMap {
-            data: BTreeMap::new(),
-        }
-    }
 
     fn insert(&mut self, key: Self::Key, value: Self::Val) -> Option<Self::Val> {
         self.data.insert(key, value)

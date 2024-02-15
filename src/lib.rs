@@ -5,10 +5,11 @@
 pub
 mod sets;
 mod maps;
+mod builder;
 
 use std::ops::RangeBounds;
-use sets::{Set, HashTableSet, TreeSet};
-use maps::{Map, HashTableMap, TreeMap};
+use sets::Set;
+use maps::Map;
 use crate::maps::SortedMap;
 
 
@@ -20,8 +21,6 @@ pub trait MultiMap<'a> {
     type FlatIter: Iterator<Item=(&'a Self::Key, &'a Self::Val)>;
     type KeyIter: Iterator<Item=&'a Self::Key>;
     type ValIter: Iterator<Item=&'a Self::Val>;
-
-    fn new() -> Self;
 
     fn insert(&mut self, key: Self::Key, value: Self::Val) -> bool;
 
@@ -54,26 +53,29 @@ pub trait SortedMultiMap<'a>: MultiMap<'a> {
 }
 
 
-struct MultiMapImpl<M> {
+#[derive(Debug, PartialEq, Eq)]
+struct MultiMapImpl<M: Default> {
     data: M,
     len: usize,
 }
 
-impl<'a, M> MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + 'a, M::Val: Set<'a> + Default + 'a {
+impl <M: Default> MultiMapImpl<M> {
+    fn new() -> Self {
+        MultiMapImpl {
+            data: M::default(),
+            len: 0,
+        }
+    }
+}
+
+impl<'a, M> MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + Default + 'a, M::Val: Set<'a> + Default + 'a {
     type Key = M::Key;
     type Val = <<M as Map<'a>>::Val as Set<'a>>::Elem;
     type ValSet = M::Val;
     type Iter = M::Iter;
+    type FlatIter = impl Iterator<Item=(&'a Self::Key, &'a Self::Val)>;
     type KeyIter = M::KeyIter;
     type ValIter = impl Iterator<Item=&'a Self::Val>;
-    type FlatIter = impl Iterator<Item=(&'a Self::Key, &'a Self::Val)>;
-
-    fn new() -> Self {
-        MultiMapImpl {
-            data: M::new(),
-            len: 0,
-        }
-    }
 
     fn insert(&mut self, key: Self::Key, value: Self::Val) -> bool {
         let set = self.data.get_or_insert(key, || Default::default());
@@ -134,7 +136,7 @@ impl<'a, M> MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + 'a, M::Val: Set<
     }
 }
 
-impl<'a, M> SortedMultiMap<'a> for MultiMapImpl<M> where M: SortedMap<'a> + 'a, M::Val: Set<'a> + Default + 'a {
+impl<'a, M> SortedMultiMap<'a> for MultiMapImpl<M> where M: SortedMap<'a> + Default + 'a, M::Val: Set<'a> + Default + 'a {
     type RangeIter = M::RangeIter;
     type FlatRangeIter<R> = impl Iterator<Item=(&'a Self::Key, &'a Self::Val)> where R: RangeBounds< Self::Key>, Self: 'a;
 
@@ -148,16 +150,14 @@ impl<'a, M> SortedMultiMap<'a> for MultiMapImpl<M> where M: SortedMap<'a> + 'a, 
 }
 
 
-type TreeMultiMap<K, V> = MultiMapImpl<TreeMap<K, TreeSet<V>>>;
-type HashMultiMap<K, V> = MultiMapImpl<HashTableMap<K, HashTableSet<V>>>;
-
 #[cfg(test)]
 mod tests {
+    use crate::builder::MultiMapBuilder;
     use super::*;
 
     #[test]
     fn test_hash_multi_map_insert() {
-        let mut map = HashMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 2), false);
         assert_eq!(map.insert(1, 3), true);
@@ -167,7 +167,7 @@ mod tests {
 
     #[test]
     fn test_hash_multi_map_remove() {
-        let mut map = HashMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -181,7 +181,7 @@ mod tests {
 
     #[test]
     fn test_hash_multi_map_contains() {
-        let mut map = HashMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -194,7 +194,7 @@ mod tests {
 
     #[test]
     fn test_hash_multi_map_contains_key() {
-        let mut map = HashMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -205,7 +205,7 @@ mod tests {
 
     #[test]
     fn test_hash_multi_map_get() {
-        let mut map = HashMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -219,7 +219,7 @@ mod tests {
 
     #[test]
     fn test_hash_multi_map_keys() {
-        let mut map = HashMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -231,7 +231,7 @@ mod tests {
 
     #[test]
     fn test_hash_multi_map_values() {
-        let mut map = HashMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -243,7 +243,7 @@ mod tests {
 
     #[test]
     fn test_hash_multi_map_iter_flat() {
-        let mut map = HashMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -255,7 +255,7 @@ mod tests {
 
     #[test]
     fn test_hash_multi_map_is_empty() {
-        let mut map = HashMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
         assert_eq!(map.is_empty(), true);
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.is_empty(), false);
@@ -265,7 +265,7 @@ mod tests {
 
     #[test]
     fn test_hash_multi_map_len() {
-        let mut map = HashMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
         assert_eq!(map.len(), 0);
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.len(), 1);
@@ -283,7 +283,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_insert() {
-        let mut map = TreeMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 2), false);
         assert_eq!(map.insert(1, 3), true);
@@ -293,7 +293,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_remove() {
-        let mut map = TreeMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -307,7 +307,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_contains() {
-        let mut map = TreeMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -320,7 +320,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_contains_key() {
-        let mut map = TreeMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -331,7 +331,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_get() {
-        let mut map = TreeMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -345,7 +345,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_keys() {
-        let mut map = TreeMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -356,7 +356,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_values() {
-        let mut map = TreeMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -367,7 +367,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_iter_flat() {
-        let mut map = TreeMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -378,7 +378,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_is_empty() {
-        let mut map = TreeMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
         assert_eq!(map.is_empty(), true);
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.is_empty(), false);
@@ -388,7 +388,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_len() {
-        let mut map = TreeMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
         assert_eq!(map.len(), 0);
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.len(), 1);
@@ -406,7 +406,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_range() {
-        let mut map = TreeMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
@@ -420,7 +420,7 @@ mod tests {
 
     #[test]
     fn test_sorted_multi_map_flat_range() {
-        let mut map = TreeMultiMap::<i32, i32>::new();
+        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);

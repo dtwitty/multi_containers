@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::hash::Hash;
 use crate::sets::Set;
 
-#[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct HashTableSet<T: Hash + Eq> {
     data: HashSet<T>,
 }
@@ -12,6 +12,12 @@ impl<T: Hash + Eq> HashTableSet<T> {
         HashTableSet {
             data: HashSet::new(),
         }
+    }
+}
+
+impl<T: Hash + Eq> Default for HashTableSet<T> {
+    fn default() -> Self {
+        HashTableSet::new()
     }
 }
 

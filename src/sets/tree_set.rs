@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 use std::ops::RangeBounds;
 use crate::sets::{Set, SortedSet};
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TreeSet<T: Ord> {
     data: BTreeSet<T>,
 }
@@ -12,6 +12,12 @@ impl<T: Ord> TreeSet<T> {
         TreeSet {
             data: BTreeSet::new(),
         }
+    }
+}
+
+impl<T: Ord> Default for TreeSet<T> {
+    fn default() -> Self {
+        TreeSet::new()
     }
 }
 
