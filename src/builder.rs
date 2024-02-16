@@ -1,7 +1,7 @@
 use std::hash::Hash;
 use crate::sets::{HashTableSet, TreeSet};
 use crate::maps::{HashTableMap, Map, TreeMap};
-use crate::MultiMapImpl;
+use crate::MultiMap;
 
 
 pub struct MultiMapBuilder {}
@@ -51,7 +51,7 @@ impl<M: Map + Default> MultiMapBuilderWithKeysAndVals<M> {
         }
     }
 
-    pub fn build(self) -> MultiMapImpl<M> {
-        MultiMapImpl::new()
+    pub fn build(self) -> MultiMap<M> {
+        MultiMap::new()
     }
 }
