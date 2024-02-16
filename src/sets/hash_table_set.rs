@@ -43,7 +43,7 @@ impl<T: Debug> Debug for HashTableSet<T> {
     }
 }
 
-impl<T: Hash + Eq + Clone + Debug> Set for HashTableSet<T> {
+impl<T: Hash + Eq > Set for HashTableSet<T> {
     type Elem = T;
 
     type Iter<'a> = impl Iterator<Item=&'a T> where Self: 'a;

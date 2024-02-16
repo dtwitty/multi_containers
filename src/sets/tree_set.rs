@@ -44,7 +44,7 @@ impl<T: Clone> Clone for TreeSet<T> {
 }
 
 
-impl<T: Ord + Clone + Debug> Set for TreeSet<T> {
+impl<T: Ord > Set for TreeSet<T> {
     type Elem = T;
     type Iter<'a> = impl Iterator<Item=&'a T> where Self: 'a;
 
@@ -73,7 +73,7 @@ impl<T: Ord + Clone + Debug> Set for TreeSet<T> {
     }
 }
 
-impl<T: Ord + Clone + Debug> SortedSet for TreeSet<T> {
+impl<T: Ord > SortedSet for TreeSet<T> {
     type RangeIter<'a> = impl Iterator<Item=&'a T> where Self: 'a;
 
     fn range<R: RangeBounds<Self::Elem>>(&self, range: R) -> Self::RangeIter<'_> {

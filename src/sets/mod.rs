@@ -1,13 +1,12 @@
 mod hash_table_set;
 mod tree_set;
 
-use std::fmt::Debug;
 use std::ops::RangeBounds;
 pub use self::hash_table_set::HashTableSet;
 pub use self::tree_set::TreeSet;
 
 /// A set of elements.
-pub trait Set : Eq + Debug + Clone + Default {
+pub trait Set {
     /// The type of elements in the set.
     type Elem;
 

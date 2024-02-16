@@ -1,13 +1,12 @@
 mod hash_table_map;
 mod tree_map;
 
-use std::fmt::Debug;
 use std::ops::RangeBounds;
 pub use self::hash_table_map::HashTableMap;
 pub use self::tree_map::TreeMap;
 
 /// A map from keys to values.
-pub trait Map: Eq + Debug + Default + Clone {
+pub trait Map {
     /// The type of keys in the map.
     type Key;
 

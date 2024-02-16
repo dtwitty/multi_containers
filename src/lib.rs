@@ -99,7 +99,7 @@ impl<M: Debug> Debug for MultiMapImpl<M> {
     }
 }
 
-impl<M> MultiMap for MultiMapImpl<M> where M: Map, M::Val: Set {
+impl<M> MultiMap for MultiMapImpl<M> where M: Map, M::Val: Set + Default {
     type Key = M::Key;
     type Val = <<M as Map>::Val as Set>::Elem;
     type ValSet = M::Val;

@@ -42,7 +42,7 @@ impl<K: Clone, V: Clone> Clone for TreeMap<K, V> {
     }
 }
 
-impl<K: Ord + Eq + Debug + Clone, V: Eq + Debug + Clone> Map for TreeMap<K, V> {
+impl<K: Ord, V> Map for TreeMap<K, V> {
     type Key = K;
     type Val = V;
     type Iter<'a> = impl Iterator<Item=(&'a K, &'a V)> where Self: 'a;
@@ -100,7 +100,7 @@ impl<K: Ord + Eq + Debug + Clone, V: Eq + Debug + Clone> Map for TreeMap<K, V> {
     }
 }
 
-impl<K: Ord + Eq + Debug + Clone , V: Eq + Debug + Clone > SortedMap for TreeMap<K, V> {
+impl<K: Ord, V> SortedMap for TreeMap<K, V> {
     type RangeIter<'a> = impl Iterator<Item=(&'a K, &'a V)> where Self: 'a;
     type RangeIterMut<'a> = impl Iterator<Item=(&'a K, &'a mut V)> where Self: 'a;
 

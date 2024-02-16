@@ -44,7 +44,7 @@ impl<'a, K: Clone, V: Clone> Clone for HashTableMap<K, V> {
 }
 
 
-impl<K: Hash + Eq + Debug + Clone, V: Eq + Debug + Clone> Map for HashTableMap<K, V> {
+impl<K: Hash + Eq, V> Map for HashTableMap<K, V> {
     type Key = K;
     type Val = V;
     type Iter<'a> = impl Iterator<Item=(&'a K, &'a V)> where Self: 'a;
