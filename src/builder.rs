@@ -12,7 +12,7 @@ impl MultiMapBuilder {
         MultiMapBuilder {}
     }
 
-    pub fn hash_values<'a, V: Hash + Eq + Clone + Debug + 'a>(self) -> MultiMapBuilderWithVals<impl Set<Elem=V>> {
+    pub fn hash_values<V: Hash + Eq + Clone + Debug>(self) -> MultiMapBuilderWithVals<impl Set<Elem=V>> {
         MultiMapBuilderWithVals::<HashTableSet<V>>::new()
     }
 
@@ -25,7 +25,7 @@ pub struct MultiMapBuilderWithVals<S> {
     _s: std::marker::PhantomData<S>,
 }
 
-impl<'a, S: Eq + Debug + Clone + 'a> MultiMapBuilderWithVals<S> {
+impl<S: Eq + Debug + Clone> MultiMapBuilderWithVals<S> {
     pub fn new() -> Self {
         MultiMapBuilderWithVals {
             _s: std::marker::PhantomData,
