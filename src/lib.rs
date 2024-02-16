@@ -92,7 +92,7 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
         self.data.get(key)
     }
 
-    fn keys(&self) -> impl Iterator<Item=&M::Key> {
+    fn keys(&self) -> M::KeyIter<'_> {
         self.data.keys()
     }
 
@@ -100,7 +100,7 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
         self.data.values().flat_map(|s| s.iter())
     }
 
-    fn iter(&self) -> impl Iterator<Item=(&M::Key, &M::Val)> {
+    fn iter(&self) -> M::Iter<'_>{
         self.data.iter()
     }
 

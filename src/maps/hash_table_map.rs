@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{hash_map, HashMap};
 use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
 use crate::maps::Map;
@@ -47,10 +47,10 @@ impl<'a, K: Clone, V: Clone> Clone for HashTableMap<K, V> {
 impl<K: Hash + Eq, V> Map for HashTableMap<K, V> {
     type Key = K;
     type Val = V;
-    type Iter<'a> = impl Iterator<Item=(&'a K, &'a V)> where Self: 'a;
-    type IterMut<'a> = impl Iterator<Item=(&'a K, &'a mut V)> where Self: 'a;
-    type KeyIter<'a> = impl Iterator<Item=&'a K> where Self: 'a;
-    type ValIter<'a> = impl Iterator<Item=&'a V> where Self: 'a;
+    type Iter<'a> = hash_map::Iter<'a, K, V> where Self: 'a;
+    type IterMut<'a> = hash_map::IterMut<'a, K, V> where Self: 'a;
+    type KeyIter<'a> = hash_map::Keys<'a, K, V> where Self: 'a;
+    type ValIter<'a> = hash_map::Values<'a, K, V> where Self: 'a;
 
     fn insert(&mut self, key: Self::Key, value: Self::Val) -> Option<Self::Val> {
         self.data.insert(key, value)

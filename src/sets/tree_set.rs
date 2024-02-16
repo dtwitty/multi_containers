@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::collections::{btree_set, BTreeSet};
 use std::fmt::{Debug, Formatter};
 use std::ops::RangeBounds;
 use crate::sets::{Set, SortedSet};
@@ -46,7 +46,7 @@ impl<T: Clone> Clone for TreeSet<T> {
 
 impl<T: Ord > Set for TreeSet<T> {
     type Elem = T;
-    type Iter<'a> = impl Iterator<Item=&'a T> where Self: 'a;
+    type Iter<'a> = btree_set::Iter<'a, T> where T: 'a;
 
     fn insert(&mut self, value: Self::Elem) -> bool {
         self.data.insert(value)

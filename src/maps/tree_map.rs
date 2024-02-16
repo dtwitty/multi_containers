@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{btree_map, BTreeMap};
 use std::fmt::{Debug, Formatter};
 use crate::maps::{Map, SortedMap};
 
@@ -45,10 +45,10 @@ impl<K: Clone, V: Clone> Clone for TreeMap<K, V> {
 impl<K: Ord, V> Map for TreeMap<K, V> {
     type Key = K;
     type Val = V;
-    type Iter<'a> = impl Iterator<Item=(&'a K, &'a V)> where Self: 'a;
-    type IterMut<'a> = impl Iterator<Item=(&'a K, &'a mut V)> where Self: 'a;
-    type KeyIter<'a> = impl Iterator<Item=&'a K> where Self: 'a;
-    type ValIter<'a> = impl Iterator<Item=&'a V> where Self: 'a;
+    type Iter<'a> = btree_map::Iter<'a, K, V> where Self: 'a;
+    type IterMut<'a> = btree_map::IterMut<'a, K, V> where Self: 'a;
+    type KeyIter<'a> = btree_map::Keys<'a, K, V> where Self: 'a;
+    type ValIter<'a> = btree_map::Values<'a, K, V> where Self: 'a;
 
 
     fn insert(&mut self, key: Self::Key, value: Self::Val) -> Option<Self::Val> {

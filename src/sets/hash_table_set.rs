@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{hash_set, HashSet};
 use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
 use crate::sets::Set;
@@ -43,10 +43,10 @@ impl<T: Debug> Debug for HashTableSet<T> {
     }
 }
 
-impl<T: Hash + Eq > Set for HashTableSet<T> {
+impl<T: Hash + Eq> Set for HashTableSet<T> {
     type Elem = T;
 
-    type Iter<'a> = impl Iterator<Item=&'a T> where Self: 'a;
+    type Iter<'a> = hash_set::Iter<'a, T> where T: 'a;
 
     fn insert(&mut self, value: Self::Elem) -> bool {
         self.data.insert(value)
