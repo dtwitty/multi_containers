@@ -42,13 +42,13 @@ impl<K: Clone, V: Clone> Clone for TreeMap<K, V> {
     }
 }
 
-impl<'a, K: Ord + 'a, V: 'a> Map<'a> for TreeMap<K, V> {
+impl<K: Ord + Eq + Debug + Clone, V: Eq + Debug + Clone> Map for TreeMap<K, V> {
     type Key = K;
     type Val = V;
-    type Iter = impl Iterator<Item=(&'a K, &'a V)> + 'a;
-    type IterMut = impl Iterator<Item=(&'a K, &'a mut V)> + 'a;
-    type KeyIter = impl Iterator<Item=&'a K> + 'a;
-    type ValIter = impl Iterator<Item=&'a V> + 'a;
+    type Iter<'a> = impl Iterator<Item=(&'a K, &'a V)> where Self: 'a;
+    type IterMut<'a> = impl Iterator<Item=(&'a K, &'a mut V)> where Self: 'a;
+    type KeyIter<'a> = impl Iterator<Item=&'a K> where Self: 'a;
+    type ValIter<'a> = impl Iterator<Item=&'a V> where Self: 'a;
 
 
     fn insert(&mut self, key: Self::Key, value: Self::Val) -> Option<Self::Val> {
@@ -83,32 +83,32 @@ impl<'a, K: Ord + 'a, V: 'a> Map<'a> for TreeMap<K, V> {
         self.data.len()
     }
 
-    fn iter(&'a self) -> Self::Iter {
+    fn iter<'a>(&'a self) -> Self::Iter<'a> {
         self.data.iter()
     }
 
-    fn iter_mut(&'a mut self) -> Self::IterMut {
+    fn iter_mut<'a>(&'a mut self) -> Self::IterMut<'a> {
         self.data.iter_mut()
     }
 
-    fn keys(&'a self) -> Self::KeyIter {
+    fn keys<'a>(&'a self) -> Self::KeyIter<'a> {
         self.data.keys()
     }
 
-    fn values(&'a self) -> Self::ValIter {
+    fn values<'a>(&'a self) -> Self::ValIter<'a> {
         self.data.values()
     }
 }
 
-impl<'a, K: Ord + 'a, V: 'a> SortedMap<'a> for TreeMap<K, V> {
-    type RangeIter = impl Iterator<Item=(&'a Self::Key, &'a Self::Val)> + 'a;
-    type RangeIterMut = impl Iterator<Item=(&'a Self::Key, &'a mut Self::Val)> + 'a;
+impl<K: Ord + Eq + Debug + Clone , V: Eq + Debug + Clone > SortedMap for TreeMap<K, V> {
+    type RangeIter<'a> = impl Iterator<Item=(&'a K, &'a V)> where Self: 'a;
+    type RangeIterMut<'a> = impl Iterator<Item=(&'a K, &'a mut V)> where Self: 'a;
 
-    fn range<R: std::ops::RangeBounds<Self::Key>>(&'a self, range: R) -> Self::RangeIter {
+    fn range<'a, R: std::ops::RangeBounds<Self::Key>>(&'a self, range: R) -> Self::RangeIter<'a> {
         self.data.range(range)
     }
 
-    fn range_mut<R: std::ops::RangeBounds<Self::Key>>(&'a mut self, range: R) -> Self::RangeIterMut {
+    fn range_mut<'a, R: std::ops::RangeBounds<Self::Key>>(&'a mut self, range: R) -> Self::RangeIterMut<'a> {
         self.data.range_mut(range)
     }
 }

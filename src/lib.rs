@@ -14,14 +14,14 @@ use maps::Map;
 use crate::maps::SortedMap;
 
 
-pub trait MultiMap<'a> {
-    type Key: 'a;
-    type Val: 'a;
-    type ValSet: Set<'a> + 'a;
-    type Iter: Iterator<Item=(&'a Self::Key, &'a Self::ValSet)>;
-    type FlatIter: Iterator<Item=(&'a Self::Key, &'a Self::Val)>;
-    type KeyIter: Iterator<Item=&'a Self::Key>;
-    type ValIter: Iterator<Item=&'a Self::Val>;
+pub trait MultiMap {
+    type Key;
+    type Val;
+    type ValSet: Set;
+    type Iter<'a>: Iterator<Item=(&'a Self::Key, &'a Self::ValSet)> where Self: 'a;
+    type FlatIter<'a>: Iterator<Item=(&'a Self::Key, &'a Self::Val)> where Self: 'a;
+    type KeyIter<'a>: Iterator<Item=&'a Self::Key> where Self: 'a;
+    type ValIter<'a>: Iterator<Item=&'a Self::Val> where Self: 'a;
 
     fn insert(&mut self, key: Self::Key, value: Self::Val) -> bool;
 
@@ -33,24 +33,26 @@ pub trait MultiMap<'a> {
 
     fn get(&self, key: &Self::Key) -> Option<&Self::ValSet>;
 
-    fn keys(&'a self) -> Self::KeyIter;
+    fn keys<'a>(&'a self) -> Self::KeyIter<'a>;
 
-    fn values(&'a self) -> Self::ValIter;
+    fn values<'a>(&'a self) -> Self::ValIter<'a>;
 
-    fn iter(&'a self) -> Self::Iter;
+    fn iter<'a>(&'a self) -> Self::Iter<'a>;
 
-    fn iter_flat(&'a self) -> Self::FlatIter;
+    fn flat_iter<'a>(&'a self) -> Self::FlatIter<'a>;
 
     fn is_empty(&self) -> bool;
 
     fn len(&self) -> usize;
 }
 
-pub trait SortedMultiMap<'a>: MultiMap<'a> {
-    type RangeIter: Iterator<Item=(&'a Self::Key, &'a Self::ValSet)>;
-    type FlatRangeIter<R>: Iterator<Item=(&'a Self::Key, &'a Self::Val)> where R: RangeBounds<Self::Key>, Self: 'a;
-    fn range<R: RangeBounds<Self::Key>>(&'a self, range: R) -> Self::RangeIter;
-    fn flat_range<R: RangeBounds<Self::Key>>(&'a self, range: R) -> Self::FlatRangeIter<R>;
+pub trait SortedMultiMap: MultiMap {
+    type RangeIter<'a>: Iterator<Item=(&'a Self::Key, &'a Self::ValSet)> where Self: 'a;
+    type FlatRangeIter<'a, R>: Iterator<Item=(&'a Self::Key, &'a Self::Val)> where R: RangeBounds<Self::Key>, Self: 'a;
+
+    fn range<'a, R: RangeBounds<Self::Key>>(&'a self, range: R) -> Self::RangeIter<'a>;
+
+    fn flat_range<'a, R: RangeBounds<Self::Key>>(&'a self, range: R) -> Self::FlatRangeIter<'a, R>;
 }
 
 
@@ -97,14 +99,14 @@ impl<M: Debug> Debug for MultiMapImpl<M> {
     }
 }
 
-impl<'a, M> MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + Default + 'a, M::Val: Set<'a> + Default + 'a {
+impl<M> MultiMap for MultiMapImpl<M> where M: Map, M::Val: Set {
     type Key = M::Key;
-    type Val = <<M as Map<'a>>::Val as Set<'a>>::Elem;
+    type Val = <<M as Map>::Val as Set>::Elem;
     type ValSet = M::Val;
-    type Iter = M::Iter;
-    type FlatIter = impl Iterator<Item=(&'a Self::Key, &'a Self::Val)>;
-    type KeyIter = M::KeyIter;
-    type ValIter = impl Iterator<Item=&'a Self::Val>;
+    type Iter<'a> = impl Iterator<Item=(&'a Self::Key, &'a Self::ValSet)> where Self: 'a;
+    type FlatIter<'a> = impl Iterator<Item=(&'a Self::Key, &'a Self::Val)> where Self: 'a;
+    type KeyIter<'a> = impl Iterator<Item=&'a Self::Key> where Self: 'a;
+    type ValIter<'a> = impl Iterator<Item=&'a Self::Val> where Self: 'a;
 
     fn insert(&mut self, key: Self::Key, value: Self::Val) -> bool {
         let set = self.data.get_or_insert(key, || Default::default());
@@ -140,21 +142,22 @@ impl<'a, M> MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + Default + 'a, M:
         self.data.get(key)
     }
 
-    fn keys(&'a self) -> Self::KeyIter {
+    fn keys<'a>(&'a self) -> Self::KeyIter<'a> {
         self.data.keys()
     }
 
-    fn values(&'a self) -> Self::ValIter {
+    fn values<'a>(&'a self) -> Self::ValIter<'a> {
         self.data.values().flat_map(|s| s.iter())
     }
 
-    fn iter(&'a self) -> Self::Iter {
+    fn iter<'a>(&'a self) -> Self::Iter<'a> {
         self.data.iter()
     }
 
-    fn iter_flat(&'a self) -> Self::FlatIter {
-        self.iter().flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
+    fn flat_iter<'a>(&'a self) -> Self::FlatIter<'a> {
+        self.data.iter().flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
     }
+
 
     fn is_empty(&self) -> bool {
         self.data.is_empty()
@@ -165,16 +168,16 @@ impl<'a, M> MultiMap<'a> for MultiMapImpl<M> where M: Map<'a> + Default + 'a, M:
     }
 }
 
-impl<'a, M> SortedMultiMap<'a> for MultiMapImpl<M> where M: SortedMap<'a> + Default + 'a, M::Val: Set<'a> + Default + 'a {
-    type RangeIter = M::RangeIter;
-    type FlatRangeIter<R> = impl Iterator<Item=(&'a Self::Key, &'a Self::Val)> where R: RangeBounds< Self::Key>, Self: 'a;
+impl<M> SortedMultiMap for MultiMapImpl<M> where M: SortedMap + Default, M::Val: Set + Default {
+    type RangeIter<'a> = impl Iterator<Item=(&'a Self::Key, &'a Self::ValSet)> where Self: 'a;
+    type FlatRangeIter<'a, R> = impl Iterator<Item=(&'a Self::Key, &'a Self::Val)> where R: RangeBounds< Self::Key>, Self: 'a;
 
-    fn range<R: RangeBounds<Self::Key>>(&'a self, range: R) -> Self::RangeIter {
+    fn range<'a, R: RangeBounds<Self::Key>>(&'a self, range: R) -> Self::RangeIter<'a> {
         self.data.range(range)
     }
 
-    fn flat_range<R: RangeBounds<Self::Key>>(&'a self, range: R) -> Self::FlatRangeIter<R> {
-        self.range(range).flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
+    fn flat_range<'a, R: RangeBounds<Self::Key>>(&'a self, range: R) -> Self::FlatRangeIter<'a, R> {
+        self.data.range(range).flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
     }
 }
 
@@ -271,13 +274,13 @@ mod tests {
     }
 
     #[test]
-    fn test_hash_multi_map_iter_flat() {
+    fn test_hash_multi_map_flat_iter() {
         let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
         let expected = vec![(&1, &2), (&1, &3), (&2, &3)];
-        let mut actual = map.iter_flat().collect::<Vec<_>>();
+        let mut actual = map.flat_iter().collect::<Vec<_>>();
         actual.sort();
         assert_eq!(actual, expected);
     }
@@ -395,13 +398,13 @@ mod tests {
     }
 
     #[test]
-    fn test_sorted_multi_map_iter_flat() {
+    fn test_sorted_multi_map_flat_iter() {
         let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
         assert_eq!(map.insert(1, 2), true);
         assert_eq!(map.insert(1, 3), true);
         assert_eq!(map.insert(2, 3), true);
         let expected = vec![(&1, &2), (&1, &3), (&2, &3)];
-        let actual = map.iter_flat().collect::<Vec<_>>();
+        let actual = map.flat_iter().collect::<Vec<_>>();
         assert_eq!(actual, expected);
     }
 

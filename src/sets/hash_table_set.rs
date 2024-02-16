@@ -43,10 +43,10 @@ impl<T: Debug> Debug for HashTableSet<T> {
     }
 }
 
-impl<'a, T: Hash + Eq + 'a> Set<'a> for HashTableSet<T> {
+impl<T: Hash + Eq + Clone + Debug> Set for HashTableSet<T> {
     type Elem = T;
 
-    type Iter = impl Iterator<Item=&'a T> + 'a;
+    type Iter<'a> = impl Iterator<Item=&'a T> where Self: 'a;
 
     fn insert(&mut self, value: Self::Elem) -> bool {
         self.data.insert(value)
@@ -68,7 +68,7 @@ impl<'a, T: Hash + Eq + 'a> Set<'a> for HashTableSet<T> {
         self.data.len()
     }
 
-    fn iter(&'a self) -> Self::Iter {
+    fn iter<'a>(&'a self) -> Self::Iter<'a> {
         self.data.iter()
     }
 }

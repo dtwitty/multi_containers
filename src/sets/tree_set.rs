@@ -44,9 +44,9 @@ impl<T: Clone> Clone for TreeSet<T> {
 }
 
 
-impl<'a, T: Ord + 'a> Set<'a> for TreeSet<T> {
+impl<T: Ord + Clone + Debug> Set for TreeSet<T> {
     type Elem = T;
-    type Iter = impl Iterator<Item=&'a T> + 'a;
+    type Iter<'a> = impl Iterator<Item=&'a T> where Self: 'a;
 
     fn insert(&mut self, value: Self::Elem) -> bool {
         self.data.insert(value)
@@ -68,15 +68,15 @@ impl<'a, T: Ord + 'a> Set<'a> for TreeSet<T> {
         self.data.len()
     }
 
-    fn iter(&'a self) -> Self::Iter {
+    fn iter<'a>(&'a self) -> Self::Iter<'a> {
         self.data.iter()
     }
 }
 
-impl<'a, T: Ord + 'a> SortedSet<'a> for TreeSet<T> {
-    type RangeIter = impl Iterator<Item=&'a Self::Elem> + 'a;
+impl<T: Ord + Clone + Debug> SortedSet for TreeSet<T> {
+    type RangeIter<'a> = impl Iterator<Item=&'a T> where Self: 'a;
 
-    fn range<R: RangeBounds<Self::Elem>>(&'a self, range: R) -> Self::RangeIter {
+    fn range<'a, R: RangeBounds<Self::Elem>>(&'a self, range: R) -> Self::RangeIter<'a> {
         self.data.range(range)
     }
 }

@@ -35,7 +35,7 @@ impl<'a, K: Debug, V: Debug> Debug for HashTableMap<K, V> {
     }
 }
 
-impl <'a, K: Clone, V: Clone> Clone for HashTableMap<K, V> {
+impl<'a, K: Clone, V: Clone> Clone for HashTableMap<K, V> {
     fn clone(&self) -> Self {
         HashTableMap {
             data: self.data.clone(),
@@ -44,13 +44,13 @@ impl <'a, K: Clone, V: Clone> Clone for HashTableMap<K, V> {
 }
 
 
-impl<'a, K: Hash + Eq + 'a, V: 'a> Map<'a> for HashTableMap<K, V> {
+impl<K: Hash + Eq + Debug + Clone, V: Eq + Debug + Clone> Map for HashTableMap<K, V> {
     type Key = K;
     type Val = V;
-    type Iter = impl Iterator<Item=(&'a K, &'a V)> + 'a;
-    type IterMut = impl Iterator<Item=(&'a K, &'a mut V)> + 'a;
-    type KeyIter = impl Iterator<Item=&'a K> + 'a;
-    type ValIter = impl Iterator<Item=&'a V> + 'a;
+    type Iter<'a> = impl Iterator<Item=(&'a K, &'a V)> where Self: 'a;
+    type IterMut<'a> = impl Iterator<Item=(&'a K, &'a mut V)> where Self: 'a;
+    type KeyIter<'a> = impl Iterator<Item=&'a K> where Self: 'a;
+    type ValIter<'a> = impl Iterator<Item=&'a V> where Self: 'a;
 
     fn insert(&mut self, key: Self::Key, value: Self::Val) -> Option<Self::Val> {
         self.data.insert(key, value)
@@ -84,19 +84,19 @@ impl<'a, K: Hash + Eq + 'a, V: 'a> Map<'a> for HashTableMap<K, V> {
         self.data.len()
     }
 
-    fn iter(&'a self) -> Self::Iter {
+    fn iter<'a>(&'a self) -> Self::Iter<'a> {
         self.data.iter()
     }
 
-    fn iter_mut(&'a mut self) -> Self::IterMut {
+    fn iter_mut<'a>(&'a mut self) -> Self::IterMut<'a> {
         self.data.iter_mut()
     }
 
-    fn keys(&'a self) -> Self::KeyIter {
+    fn keys<'a>(&'a self) -> Self::KeyIter<'a> {
         self.data.keys()
     }
 
-    fn values(&'a self) -> Self::ValIter {
+    fn values<'a>(&'a self) -> Self::ValIter<'a> {
         self.data.values()
     }
 }

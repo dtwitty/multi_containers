@@ -1,17 +1,18 @@
 mod hash_table_set;
 mod tree_set;
 
+use std::fmt::Debug;
 use std::ops::RangeBounds;
 pub use self::hash_table_set::HashTableSet;
 pub use self::tree_set::TreeSet;
 
 /// A set of elements.
-pub trait Set<'a> {
+pub trait Set : Eq + Debug + Clone + Default {
     /// The type of elements in the set.
-    type Elem: 'a;
+    type Elem;
 
     /// The type of iterator over the elements of the set.
-    type Iter: Iterator<Item=&'a Self::Elem> + 'a;
+    type Iter<'a>: Iterator<Item=&'a Self::Elem> where Self: 'a;
 
     /// Inserts a value into the set. Returns `true` if the value was not already present.
     fn insert(&mut self, value: Self::Elem) -> bool;
@@ -29,13 +30,13 @@ pub trait Set<'a> {
     fn len(&self) -> usize;
 
     /// Returns an iterator over the elements of the set.
-    fn iter(&'a self) -> Self::Iter;
+    fn iter<'a>(&'a self) -> Self::Iter<'a>;
 }
 
-pub trait SortedSet<'a>: Set<'a> {
+pub trait SortedSet: Set {
     /// The type of iterator over the elements of the set within a range.
-    type RangeIter: Iterator<Item=&'a Self::Elem> + 'a;
+    type RangeIter<'a>: Iterator<Item=&'a Self::Elem> where Self: 'a;
 
     /// Returns an iterator over the elements of the set within the given range.
-    fn range<R: RangeBounds<Self::Elem>>(&'a self, range: R) -> Self::RangeIter;
+    fn range<'a, R: RangeBounds<Self::Elem>>(&'a self, range: R) -> Self::RangeIter<'a>;
 }
