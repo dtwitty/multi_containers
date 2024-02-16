@@ -84,19 +84,19 @@ impl<K: Hash + Eq + Debug + Clone, V: Eq + Debug + Clone> Map for HashTableMap<K
         self.data.len()
     }
 
-    fn iter<'a>(&'a self) -> Self::Iter<'a> {
+    fn iter(&self) -> Self::Iter<'_> {
         self.data.iter()
     }
 
-    fn iter_mut<'a>(&'a mut self) -> Self::IterMut<'a> {
+    fn iter_mut(&mut self) -> Self::IterMut<'_> {
         self.data.iter_mut()
     }
 
-    fn keys<'a>(&'a self) -> Self::KeyIter<'a> {
+    fn keys(&self) -> Self::KeyIter<'_> {
         self.data.keys()
     }
 
-    fn values<'a>(&'a self) -> Self::ValIter<'a> {
+    fn values(&self) -> Self::ValIter<'_> {
         self.data.values()
     }
 }

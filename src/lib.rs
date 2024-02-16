@@ -33,13 +33,13 @@ pub trait MultiMap {
 
     fn get(&self, key: &Self::Key) -> Option<&Self::ValSet>;
 
-    fn keys<'a>(&'a self) -> Self::KeyIter<'a>;
+    fn keys(&self) -> Self::KeyIter<'_>;
 
-    fn values<'a>(&'a self) -> Self::ValIter<'a>;
+    fn values(&self) -> Self::ValIter<'_>;
 
-    fn iter<'a>(&'a self) -> Self::Iter<'a>;
+    fn iter(&self) -> Self::Iter<'_>;
 
-    fn flat_iter<'a>(&'a self) -> Self::FlatIter<'a>;
+    fn flat_iter(&self) -> Self::FlatIter<'_>;
 
     fn is_empty(&self) -> bool;
 
@@ -50,9 +50,9 @@ pub trait SortedMultiMap: MultiMap {
     type RangeIter<'a>: Iterator<Item=(&'a Self::Key, &'a Self::ValSet)> where Self: 'a;
     type FlatRangeIter<'a, R>: Iterator<Item=(&'a Self::Key, &'a Self::Val)> where R: RangeBounds<Self::Key>, Self: 'a;
 
-    fn range<'a, R: RangeBounds<Self::Key>>(&'a self, range: R) -> Self::RangeIter<'a>;
+    fn range<R: RangeBounds<Self::Key>>(&self, range: R) -> Self::RangeIter<'_>;
 
-    fn flat_range<'a, R: RangeBounds<Self::Key>>(&'a self, range: R) -> Self::FlatRangeIter<'a, R>;
+    fn flat_range<R: RangeBounds<Self::Key>>(&self, range: R) -> Self::FlatRangeIter<'_, R>;
 }
 
 
@@ -109,7 +109,7 @@ impl<M> MultiMap for MultiMapImpl<M> where M: Map, M::Val: Set {
     type ValIter<'a> = impl Iterator<Item=&'a Self::Val> where Self: 'a;
 
     fn insert(&mut self, key: Self::Key, value: Self::Val) -> bool {
-        let set = self.data.get_or_insert(key, || Default::default());
+        let set = self.data.get_or_insert(key, Default::default);
         let r = set.insert(value);
         if r {
             self.len += 1;
@@ -142,19 +142,19 @@ impl<M> MultiMap for MultiMapImpl<M> where M: Map, M::Val: Set {
         self.data.get(key)
     }
 
-    fn keys<'a>(&'a self) -> Self::KeyIter<'a> {
+    fn keys(&self) -> Self::KeyIter<'_> {
         self.data.keys()
     }
 
-    fn values<'a>(&'a self) -> Self::ValIter<'a> {
+    fn values(&self) -> Self::ValIter<'_> {
         self.data.values().flat_map(|s| s.iter())
     }
 
-    fn iter<'a>(&'a self) -> Self::Iter<'a> {
+    fn iter(&self) -> Self::Iter<'_> {
         self.data.iter()
     }
 
-    fn flat_iter<'a>(&'a self) -> Self::FlatIter<'a> {
+    fn flat_iter(&self) -> Self::FlatIter<'_> {
         self.data.iter().flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
     }
 
@@ -172,11 +172,11 @@ impl<M> SortedMultiMap for MultiMapImpl<M> where M: SortedMap + Default, M::Val:
     type RangeIter<'a> = impl Iterator<Item=(&'a Self::Key, &'a Self::ValSet)> where Self: 'a;
     type FlatRangeIter<'a, R> = impl Iterator<Item=(&'a Self::Key, &'a Self::Val)> where R: RangeBounds< Self::Key>, Self: 'a;
 
-    fn range<'a, R: RangeBounds<Self::Key>>(&'a self, range: R) -> Self::RangeIter<'a> {
+    fn range<R: RangeBounds<Self::Key>>(&self, range: R) -> Self::RangeIter<'_> {
         self.data.range(range)
     }
 
-    fn flat_range<'a, R: RangeBounds<Self::Key>>(&'a self, range: R) -> Self::FlatRangeIter<'a, R> {
+    fn flat_range<R: RangeBounds<Self::Key>>(&self, range: R) -> Self::FlatRangeIter<'_, R> {
         self.data.range(range).flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
     }
 }
@@ -190,71 +190,71 @@ mod tests {
     #[test]
     fn test_hash_multi_map_insert() {
         let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 2), false);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
-        assert_eq!(map.insert(2, 3), false);
+        assert!(map.insert(1, 2));
+        assert!(!map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
+        assert!(!map.insert(2, 3));
     }
 
     #[test]
     fn test_hash_multi_map_remove() {
         let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
-        assert_eq!(map.remove(&1, &2), true);
-        assert_eq!(map.remove(&1, &2), false);
-        assert_eq!(map.remove(&1, &3), true);
-        assert_eq!(map.remove(&1, &3), false);
-        assert_eq!(map.remove(&2, &3), true);
-        assert_eq!(map.remove(&2, &3), false);
+        assert!(map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
+        assert!(map.remove(&1, &2));
+        assert!(!map.remove(&1, &2));
+        assert!(map.remove(&1, &3));
+        assert!(!map.remove(&1, &3));
+        assert!(map.remove(&2, &3));
+        assert!(!map.remove(&2, &3));
     }
 
     #[test]
     fn test_hash_multi_map_contains() {
         let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
-        assert_eq!(map.contains(&1, &2), true);
-        assert_eq!(map.contains(&1, &3), true);
-        assert_eq!(map.contains(&2, &3), true);
-        assert_eq!(map.contains(&1, &4), false);
-        assert_eq!(map.contains(&2, &4), false);
+        assert!(map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
+        assert!(map.contains(&1, &2));
+        assert!(map.contains(&1, &3));
+        assert!(map.contains(&2, &3));
+        assert!(!map.contains(&1, &4));
+        assert!(!map.contains(&2, &4));
     }
 
     #[test]
     fn test_hash_multi_map_contains_key() {
         let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
-        assert_eq!(map.contains_key(&1), true);
-        assert_eq!(map.contains_key(&2), true);
-        assert_eq!(map.contains_key(&3), false);
+        assert!(map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
+        assert!(map.contains_key(&1));
+        assert!(map.contains_key(&2));
+        assert!(!map.contains_key(&3));
     }
 
     #[test]
     fn test_hash_multi_map_get() {
         let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
-        assert_eq!(map.get(&1).unwrap().contains(&2), true);
-        assert_eq!(map.get(&1).unwrap().contains(&3), true);
-        assert_eq!(map.get(&2).unwrap().contains(&3), true);
-        assert_eq!(map.get(&1).unwrap().contains(&4), false);
-        assert_eq!(map.get(&2).unwrap().contains(&4), false);
+        assert!(map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
+        assert!(map.get(&1).unwrap().contains(&2));
+        assert!(map.get(&1).unwrap().contains(&3));
+        assert!(map.get(&2).unwrap().contains(&3));
+        assert!(!map.get(&1).unwrap().contains(&4));
+        assert!(!map.get(&2).unwrap().contains(&4));
         assert_eq!(map.get(&3), None);
     }
 
     #[test]
     fn test_hash_multi_map_keys() {
         let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
+        assert!(map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
         let expected = vec![&1, &2];
         let mut actual = map.keys().collect::<Vec<_>>();
         actual.sort();
@@ -264,9 +264,9 @@ mod tests {
     #[test]
     fn test_hash_multi_map_values() {
         let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
+        assert!(map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
         let expected = vec![&2, &3, &3];
         let mut actual = map.values().collect::<Vec<_>>();
         actual.sort();
@@ -276,9 +276,9 @@ mod tests {
     #[test]
     fn test_hash_multi_map_flat_iter() {
         let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
+        assert!(map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
         let expected = vec![(&1, &2), (&1, &3), (&2, &3)];
         let mut actual = map.flat_iter().collect::<Vec<_>>();
         actual.sort();
@@ -288,99 +288,99 @@ mod tests {
     #[test]
     fn test_hash_multi_map_is_empty() {
         let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
-        assert_eq!(map.is_empty(), true);
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.is_empty(), false);
-        assert_eq!(map.remove(&1, &2), true);
-        assert_eq!(map.is_empty(), true);
+        assert!(map.is_empty());
+        assert!(map.insert(1, 2));
+        assert!(!map.is_empty());
+        assert!(map.remove(&1, &2));
+        assert!(map.is_empty());
     }
 
     #[test]
     fn test_hash_multi_map_len() {
         let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
         assert_eq!(map.len(), 0);
-        assert_eq!(map.insert(1, 2), true);
+        assert!(map.insert(1, 2));
         assert_eq!(map.len(), 1);
-        assert_eq!(map.insert(1, 3), true);
+        assert!(map.insert(1, 3));
         assert_eq!(map.len(), 2);
-        assert_eq!(map.insert(2, 3), true);
+        assert!(map.insert(2, 3));
         assert_eq!(map.len(), 3);
-        assert_eq!(map.remove(&1, &2), true);
+        assert!(map.remove(&1, &2));
         assert_eq!(map.len(), 2);
-        assert_eq!(map.remove(&1, &3), true);
+        assert!(map.remove(&1, &3));
         assert_eq!(map.len(), 1);
-        assert_eq!(map.remove(&2, &3), true);
+        assert!(map.remove(&2, &3));
         assert_eq!(map.len(), 0);
     }
 
     #[test]
     fn test_sorted_multi_map_insert() {
         let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 2), false);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
-        assert_eq!(map.insert(2, 3), false);
+        assert!(map.insert(1, 2));
+        assert!(!map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
+        assert!(!map.insert(2, 3));
     }
 
     #[test]
     fn test_sorted_multi_map_remove() {
         let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
-        assert_eq!(map.remove(&1, &2), true);
-        assert_eq!(map.remove(&1, &2), false);
-        assert_eq!(map.remove(&1, &3), true);
-        assert_eq!(map.remove(&1, &3), false);
-        assert_eq!(map.remove(&2, &3), true);
-        assert_eq!(map.remove(&2, &3), false);
+        assert!(map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
+        assert!(map.remove(&1, &2));
+        assert!(!map.remove(&1, &2));
+        assert!(map.remove(&1, &3));
+        assert!(!map.remove(&1, &3));
+        assert!(map.remove(&2, &3));
+        assert!(!map.remove(&2, &3));
     }
 
     #[test]
     fn test_sorted_multi_map_contains() {
         let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
-        assert_eq!(map.contains(&1, &2), true);
-        assert_eq!(map.contains(&1, &3), true);
-        assert_eq!(map.contains(&2, &3), true);
-        assert_eq!(map.contains(&1, &4), false);
-        assert_eq!(map.contains(&2, &4), false);
+        assert!(map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
+        assert!(map.contains(&1, &2));
+        assert!(map.contains(&1, &3));
+        assert!(map.contains(&2, &3));
+        assert!(!map.contains(&1, &4));
+        assert!(!map.contains(&2, &4));
     }
 
     #[test]
     fn test_sorted_multi_map_contains_key() {
         let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
-        assert_eq!(map.contains_key(&1), true);
-        assert_eq!(map.contains_key(&2), true);
-        assert_eq!(map.contains_key(&3), false);
+        assert!(map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
+        assert!(map.contains_key(&1));
+        assert!(map.contains_key(&2));
+        assert!(!map.contains_key(&3));
     }
 
     #[test]
     fn test_sorted_multi_map_get() {
         let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
-        assert_eq!(map.get(&1).unwrap().contains(&2), true);
-        assert_eq!(map.get(&1).unwrap().contains(&3), true);
-        assert_eq!(map.get(&2).unwrap().contains(&3), true);
-        assert_eq!(map.get(&1).unwrap().contains(&4), false);
-        assert_eq!(map.get(&2).unwrap().contains(&4), false);
+        assert!(map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
+        assert!(map.get(&1).unwrap().contains(&2));
+        assert!(map.get(&1).unwrap().contains(&3));
+        assert!(map.get(&2).unwrap().contains(&3));
+        assert!(!map.get(&1).unwrap().contains(&4));
+        assert!(!map.get(&2).unwrap().contains(&4));
         assert_eq!(map.get(&3), None);
     }
 
     #[test]
     fn test_sorted_multi_map_keys() {
         let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
+        assert!(map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
         let expected = vec![&1, &2];
         let actual = map.keys().collect::<Vec<_>>();
         assert_eq!(actual, expected);
@@ -389,9 +389,9 @@ mod tests {
     #[test]
     fn test_sorted_multi_map_values() {
         let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
+        assert!(map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
         let expected = vec![&2, &3, &3];
         let actual = map.values().collect::<Vec<_>>();
         assert_eq!(actual, expected);
@@ -400,9 +400,9 @@ mod tests {
     #[test]
     fn test_sorted_multi_map_flat_iter() {
         let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
+        assert!(map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
         let expected = vec![(&1, &2), (&1, &3), (&2, &3)];
         let actual = map.flat_iter().collect::<Vec<_>>();
         assert_eq!(actual, expected);
@@ -411,39 +411,39 @@ mod tests {
     #[test]
     fn test_sorted_multi_map_is_empty() {
         let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
-        assert_eq!(map.is_empty(), true);
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.is_empty(), false);
-        assert_eq!(map.remove(&1, &2), true);
-        assert_eq!(map.is_empty(), true);
+        assert!(map.is_empty());
+        assert!(map.insert(1, 2));
+        assert!(!map.is_empty());
+        assert!(map.remove(&1, &2));
+        assert!(map.is_empty());
     }
 
     #[test]
     fn test_sorted_multi_map_len() {
         let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
         assert_eq!(map.len(), 0);
-        assert_eq!(map.insert(1, 2), true);
+        assert!(map.insert(1, 2));
         assert_eq!(map.len(), 1);
-        assert_eq!(map.insert(1, 3), true);
+        assert!(map.insert(1, 3));
         assert_eq!(map.len(), 2);
-        assert_eq!(map.insert(2, 3), true);
+        assert!(map.insert(2, 3));
         assert_eq!(map.len(), 3);
-        assert_eq!(map.remove(&1, &2), true);
+        assert!(map.remove(&1, &2));
         assert_eq!(map.len(), 2);
-        assert_eq!(map.remove(&1, &3), true);
+        assert!(map.remove(&1, &3));
         assert_eq!(map.len(), 1);
-        assert_eq!(map.remove(&2, &3), true);
+        assert!(map.remove(&2, &3));
         assert_eq!(map.len(), 0);
     }
 
     #[test]
     fn test_sorted_multi_map_range() {
         let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
-        assert_eq!(map.insert(3, 4), true);
-        assert_eq!(map.insert(4, 5), true);
+        assert!(map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
+        assert!(map.insert(3, 4));
+        assert!(map.insert(4, 5));
 
         let expected = vec![&3, &4];
         let actual = map.range(2..=3).flat_map(|(_, s)| s.iter()).collect::<Vec<_>>();
@@ -453,9 +453,9 @@ mod tests {
     #[test]
     fn test_sorted_multi_map_flat_range() {
         let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
-        assert_eq!(map.insert(1, 2), true);
-        assert_eq!(map.insert(1, 3), true);
-        assert_eq!(map.insert(2, 3), true);
+        assert!(map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
         let expected = vec![(&1, &2), (&1, &3)];
         let actual = map.flat_range(1..2).collect::<Vec<_>>();
         assert_eq!(actual, expected);

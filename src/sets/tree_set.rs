@@ -68,7 +68,7 @@ impl<T: Ord + Clone + Debug> Set for TreeSet<T> {
         self.data.len()
     }
 
-    fn iter<'a>(&'a self) -> Self::Iter<'a> {
+    fn iter(&self) -> Self::Iter<'_> {
         self.data.iter()
     }
 }
@@ -76,7 +76,7 @@ impl<T: Ord + Clone + Debug> Set for TreeSet<T> {
 impl<T: Ord + Clone + Debug> SortedSet for TreeSet<T> {
     type RangeIter<'a> = impl Iterator<Item=&'a T> where Self: 'a;
 
-    fn range<'a, R: RangeBounds<Self::Elem>>(&'a self, range: R) -> Self::RangeIter<'a> {
+    fn range<R: RangeBounds<Self::Elem>>(&self, range: R) -> Self::RangeIter<'_> {
         self.data.range(range)
     }
 }

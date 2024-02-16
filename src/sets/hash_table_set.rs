@@ -68,7 +68,7 @@ impl<T: Hash + Eq + Clone + Debug> Set for HashTableSet<T> {
         self.data.len()
     }
 
-    fn iter<'a>(&'a self) -> Self::Iter<'a> {
+    fn iter(&self) -> Self::Iter<'_> {
         self.data.iter()
     }
 }

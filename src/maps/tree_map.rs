@@ -83,19 +83,19 @@ impl<K: Ord + Eq + Debug + Clone, V: Eq + Debug + Clone> Map for TreeMap<K, V> {
         self.data.len()
     }
 
-    fn iter<'a>(&'a self) -> Self::Iter<'a> {
+    fn iter(&self) -> Self::Iter<'_> {
         self.data.iter()
     }
 
-    fn iter_mut<'a>(&'a mut self) -> Self::IterMut<'a> {
+    fn iter_mut(&mut self) -> Self::IterMut<'_> {
         self.data.iter_mut()
     }
 
-    fn keys<'a>(&'a self) -> Self::KeyIter<'a> {
+    fn keys(&self) -> Self::KeyIter<'_> {
         self.data.keys()
     }
 
-    fn values<'a>(&'a self) -> Self::ValIter<'a> {
+    fn values(&self) -> Self::ValIter<'_> {
         self.data.values()
     }
 }
@@ -104,11 +104,11 @@ impl<K: Ord + Eq + Debug + Clone , V: Eq + Debug + Clone > SortedMap for TreeMap
     type RangeIter<'a> = impl Iterator<Item=(&'a K, &'a V)> where Self: 'a;
     type RangeIterMut<'a> = impl Iterator<Item=(&'a K, &'a mut V)> where Self: 'a;
 
-    fn range<'a, R: std::ops::RangeBounds<Self::Key>>(&'a self, range: R) -> Self::RangeIter<'a> {
+    fn range<R: std::ops::RangeBounds<Self::Key>>(&self, range: R) -> Self::RangeIter<'_> {
         self.data.range(range)
     }
 
-    fn range_mut<'a, R: std::ops::RangeBounds<Self::Key>>(&'a mut self, range: R) -> Self::RangeIterMut<'a> {
+    fn range_mut<R: std::ops::RangeBounds<Self::Key>>(&mut self, range: R) -> Self::RangeIterMut<'_> {
         self.data.range_mut(range)
     }
 }

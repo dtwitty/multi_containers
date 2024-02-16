@@ -30,7 +30,7 @@ pub trait Set : Eq + Debug + Clone + Default {
     fn len(&self) -> usize;
 
     /// Returns an iterator over the elements of the set.
-    fn iter<'a>(&'a self) -> Self::Iter<'a>;
+    fn iter(&self) -> Self::Iter<'_>;
 }
 
 pub trait SortedSet: Set {
@@ -38,5 +38,5 @@ pub trait SortedSet: Set {
     type RangeIter<'a>: Iterator<Item=&'a Self::Elem> where Self: 'a;
 
     /// Returns an iterator over the elements of the set within the given range.
-    fn range<'a, R: RangeBounds<Self::Elem>>(&'a self, range: R) -> Self::RangeIter<'a>;
+    fn range<R: RangeBounds<Self::Elem>>(&self, range: R) -> Self::RangeIter<'_>;
 }

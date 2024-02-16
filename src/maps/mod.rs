@@ -34,15 +34,15 @@ pub trait Map: Eq + Debug + Default + Clone {
     fn contains(&self, key: &Self::Key) -> bool;
     fn is_empty(&self) -> bool;
     fn len(&self) -> usize;
-    fn iter<'a>(&'a self) -> Self::Iter<'a>;
-    fn iter_mut<'a>(&'a mut self) -> Self::IterMut<'a>;
-    fn keys<'a>(&'a self) -> Self::KeyIter<'a>;
-    fn values<'a>(&'a self) -> Self::ValIter<'a>;
+    fn iter(&self) -> Self::Iter<'_>;
+    fn iter_mut(&mut self) -> Self::IterMut<'_>;
+    fn keys(&self) -> Self::KeyIter<'_>;
+    fn values(&self) -> Self::ValIter<'_>;
 }
 
 pub trait SortedMap: Map {
     type RangeIter<'a>: Iterator<Item=(&'a Self::Key, &'a Self::Val)> where Self: 'a;
     type RangeIterMut<'a>: Iterator<Item=(&'a Self::Key, &'a mut Self::Val)> where Self: 'a;
-    fn range<'a, R: RangeBounds<Self::Key>>(&'a self, range: R) -> Self::RangeIter<'a>;
-    fn range_mut<'a, R: RangeBounds<Self::Key>>(&'a mut self, range: R) -> Self::RangeIterMut<'a>;
+    fn range<R: RangeBounds<Self::Key>>(&self, range: R) -> Self::RangeIter<'_>;
+    fn range_mut<R: RangeBounds<Self::Key>>(&mut self, range: R) -> Self::RangeIterMut<'_>;
 }
