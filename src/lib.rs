@@ -3,9 +3,9 @@
 
 
 pub
-mod sets;
 mod maps;
 mod builder;
+mod sets;
 
 use std::borrow::Borrow;
 use std::fmt::{Debug, Formatter};
@@ -156,7 +156,6 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
 #[cfg(test)]
 mod tests {
     use crate::builder::MultiMapBuilder;
-    use super::*;
 
     #[test]
     fn test_hash_multi_map_insert() {
@@ -295,7 +294,7 @@ mod tests {
         assert!(map.insert(2, 3));
         assert_eq!(map.num_keys(), 2);
         assert!(map.remove(&1, &2));
-        assert_eq!(map.num_keys(), 1);
+        assert_eq!(map.num_keys(), 2);
         assert!(map.remove(&1, &3));
         assert_eq!(map.num_keys(), 1);
         assert!(map.remove(&2, &3));
