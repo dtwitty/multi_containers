@@ -18,14 +18,12 @@ use crate::sets::Container;
 
 struct MultiMap<M> {
     data: M,
-    len: usize,
 }
 
 impl<M: Default> MultiMap<M> {
     fn new() -> Self {
         MultiMap {
             data: M::default(),
-            len: 0,
         }
     }
 }
@@ -38,7 +36,7 @@ impl<M: Default> Default for MultiMap<M> {
 
 impl<M: PartialEq> PartialEq for MultiMap<M> {
     fn eq(&self, other: &Self) -> bool {
-        self.len == other.len && self.data == other.data
+        self.data == other.data
     }
 }
 
@@ -48,7 +46,6 @@ impl<M: Clone> Clone for MultiMap<M> {
     fn clone(&self) -> Self {
         MultiMap {
             data: self.data.clone(),
-            len: self.len,
         }
     }
 }
@@ -63,9 +60,6 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
     fn insert(&mut self, key: M::Key, value: <<M as Map>::Val as Set>::Elem) -> bool {
         let set = self.data.get_or_insert(key, Default::default);
         let r = set.insert(value);
-        if r {
-            self.len += 1;
-        }
         r
     }
 
@@ -80,7 +74,6 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
     {
         if let Some(set) = self.data.get_mut(key) {
             if set.remove(value) {
-                self.len -= 1;
                 if set.is_empty() {
                     self.data.remove(key);
                 }
@@ -130,8 +123,12 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
         self.data.is_empty()
     }
 
-    fn len(&self) -> usize {
-        self.len
+    fn num_keys(&self) -> usize {
+        self.data.len()
+    }
+
+    fn total_len(&self) -> usize {
+        self.data.values().map(|s| s.len()).sum()
     }
 
     fn range<Q, R>(&self, range: R) -> M::RangeIter<'_>
@@ -270,21 +267,39 @@ mod tests {
     }
 
     #[test]
-    fn test_hash_multi_map_len() {
+    fn test_hash_multi_map_total_len() {
         let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
-        assert_eq!(map.len(), 0);
+        assert_eq!(map.total_len(), 0);
         assert!(map.insert(1, 2));
-        assert_eq!(map.len(), 1);
+        assert_eq!(map.total_len(), 1);
         assert!(map.insert(1, 3));
-        assert_eq!(map.len(), 2);
+        assert_eq!(map.total_len(), 2);
         assert!(map.insert(2, 3));
-        assert_eq!(map.len(), 3);
+        assert_eq!(map.total_len(), 3);
         assert!(map.remove(&1, &2));
-        assert_eq!(map.len(), 2);
+        assert_eq!(map.total_len(), 2);
         assert!(map.remove(&1, &3));
-        assert_eq!(map.len(), 1);
+        assert_eq!(map.total_len(), 1);
         assert!(map.remove(&2, &3));
-        assert_eq!(map.len(), 0);
+        assert_eq!(map.total_len(), 0);
+    }
+
+    #[test]
+    fn test_hash_multi_map_num_keys() {
+        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
+        assert_eq!(map.num_keys(), 0);
+        assert!(map.insert(1, 2));
+        assert_eq!(map.num_keys(), 1);
+        assert!(map.insert(1, 3));
+        assert_eq!(map.num_keys(), 1);
+        assert!(map.insert(2, 3));
+        assert_eq!(map.num_keys(), 2);
+        assert!(map.remove(&1, &2));
+        assert_eq!(map.num_keys(), 1);
+        assert!(map.remove(&1, &3));
+        assert_eq!(map.num_keys(), 1);
+        assert!(map.remove(&2, &3));
+        assert_eq!(map.num_keys(), 0);
     }
 
     #[test]
@@ -393,21 +408,21 @@ mod tests {
     }
 
     #[test]
-    fn test_sorted_multi_map_len() {
+    fn test_sorted_multi_map_total_len() {
         let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
-        assert_eq!(map.len(), 0);
+        assert_eq!(map.total_len(), 0);
         assert!(map.insert(1, 2));
-        assert_eq!(map.len(), 1);
+        assert_eq!(map.total_len(), 1);
         assert!(map.insert(1, 3));
-        assert_eq!(map.len(), 2);
+        assert_eq!(map.total_len(), 2);
         assert!(map.insert(2, 3));
-        assert_eq!(map.len(), 3);
+        assert_eq!(map.total_len(), 3);
         assert!(map.remove(&1, &2));
-        assert_eq!(map.len(), 2);
+        assert_eq!(map.total_len(), 2);
         assert!(map.remove(&1, &3));
-        assert_eq!(map.len(), 1);
+        assert_eq!(map.total_len(), 1);
         assert!(map.remove(&2, &3));
-        assert_eq!(map.len(), 0);
+        assert_eq!(map.total_len(), 0);
     }
 
     #[test]
