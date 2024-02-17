@@ -1,6 +1,6 @@
-use std::collections::{BTreeSet, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::hash::Hash;
-use crate::maps::{HashTableMap, Map, TreeMap};
+use crate::maps::Map;
 use crate::MultiMap;
 
 
@@ -31,11 +31,11 @@ impl<S> MultiMapBuilderWithVals<S> {
         }
     }
 
-    pub fn hash_keys<K: Hash + Eq>(self) -> MultiMapBuilderWithKeysAndVals<HashTableMap<K, S>> {
-        MultiMapBuilderWithKeysAndVals::<HashTableMap<K, S>>::new()
+    pub fn hash_keys<K: Hash + Eq>(self) -> MultiMapBuilderWithKeysAndVals<HashMap<K, S>> {
+        MultiMapBuilderWithKeysAndVals::new()
     }
 
-    pub fn sorted_keys<K: Ord + Eq>(self) -> MultiMapBuilderWithKeysAndVals<TreeMap<K, S>> {
+    pub fn sorted_keys<K: Ord + Eq>(self) -> MultiMapBuilderWithKeysAndVals<BTreeMap<K, S>> {
         MultiMapBuilderWithKeysAndVals::new()
     }
 }

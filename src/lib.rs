@@ -3,9 +3,9 @@
 
 
 pub
-mod maps;
 mod builder;
 mod sets;
+mod maps;
 
 use std::borrow::Borrow;
 use std::fmt::{Debug, Formatter};
@@ -16,7 +16,7 @@ use crate::maps::{Lookup, SortedMap};
 use crate::sets::Container;
 
 
-struct MultiMap<M> {
+pub struct MultiMap<M> {
     data: M,
 }
 
