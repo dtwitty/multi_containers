@@ -13,6 +13,7 @@ use std::ops::RangeBounds;
 use sets::Set;
 use maps::Map;
 use crate::maps::{Lookup, SortedMap};
+use crate::sets::Container;
 
 
 struct MultiMap<M> {
@@ -68,7 +69,15 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
         r
     }
 
-    fn remove<Q>(&mut self, key: &Q, value: &<<M as Map>::Val as Set>::Elem) -> bool where M: Lookup<Q>, M::Key: Borrow<Q>, Q: ?Sized {
+    fn remove<Q, R>(&mut self, key: &Q, value: &R) -> bool
+        where
+            M: Lookup<Q>,
+            M::Key: Borrow<Q>,
+            Q: ?Sized,
+            M::Val: Container<R>,
+            <<M as Map>::Val as Set>::Elem: Borrow<R>,
+            R: ?Sized
+    {
         if let Some(set) = self.data.get_mut(key) {
             if set.remove(value) {
                 self.len -= 1;
@@ -81,7 +90,15 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
         false
     }
 
-    fn contains<Q>(&self, key: &Q, value: &<<M as Map>::Val as Set>::Elem) -> bool where M: Lookup<Q>, M::Key: Borrow<Q>, Q: ?Sized {
+    fn contains<Q, R>(&mut self, key: &Q, value: &R) -> bool
+        where
+            M: Lookup<Q>,
+            M::Key: Borrow<Q>,
+            Q: ?Sized,
+            M::Val: Container<R>,
+            <<M as Map>::Val as Set>::Elem: Borrow<R>,
+            R: ?Sized
+    {
         self.data.get(key).map_or(false, |set| set.contains(value))
     }
 

@@ -1,6 +1,7 @@
 mod hash_table_set;
 mod tree_set;
 
+use std::borrow::Borrow;
 use std::ops::RangeBounds;
 pub use self::hash_table_set::HashTableSet;
 pub use self::tree_set::TreeSet;
@@ -16,12 +17,6 @@ pub trait Set {
     /// Inserts a value into the set. Returns `true` if the value was not already present.
     fn insert(&mut self, value: Self::Elem) -> bool;
 
-    /// Removes a value from the set. Returns `true` if the value was present.
-    fn remove(&mut self, value: &Self::Elem) -> bool;
-
-    /// Returns `true` if the set contains the given value.
-    fn contains(&self, value: &Self::Elem) -> bool;
-
     /// Returns `true` if the set is empty.
     fn is_empty(&self) -> bool;
 
@@ -30,6 +25,14 @@ pub trait Set {
 
     /// Returns an iterator over the elements of the set.
     fn iter(&self) -> Self::Iter<'_>;
+}
+
+pub trait Container<Q>: Set where Q: ?Sized, Self::Elem: Borrow<Q> {
+    /// Removes a value from the set. Returns `true` if the value was present.
+    fn remove(&mut self, value: &Q) -> bool;
+
+    /// Returns `true` if the set contains the given value.
+    fn contains(&self, value: &Q) -> bool;
 }
 
 pub trait SortedSet: Set {

@@ -1,7 +1,8 @@
+use std::borrow::Borrow;
 use std::collections::{btree_set, BTreeSet};
 use std::fmt::{Debug, Formatter};
 use std::ops::RangeBounds;
-use crate::sets::{Set, SortedSet};
+use crate::sets::{Container, Set, SortedSet};
 
 pub struct TreeSet<T> {
     data: BTreeSet<T>,
@@ -52,14 +53,6 @@ impl<T: Ord > Set for TreeSet<T> {
         self.data.insert(value)
     }
 
-    fn remove(&mut self, value: &Self::Elem) -> bool {
-        self.data.remove(value)
-    }
-
-    fn contains(&self, value: &Self::Elem) -> bool {
-        self.data.contains(value)
-    }
-
     fn is_empty(&self) -> bool {
         self.data.is_empty()
     }
@@ -70,6 +63,16 @@ impl<T: Ord > Set for TreeSet<T> {
 
     fn iter(&self) -> Self::Iter<'_> {
         self.data.iter()
+    }
+}
+
+impl <T, Q> Container<Q> for TreeSet<T> where Q: Ord + ?Sized, T: Ord + Borrow<Q> {
+    fn remove(&mut self, value: &Q) -> bool {
+        self.data.remove(value)
+    }
+
+    fn contains(&self, value: &Q) -> bool {
+        self.data.contains(value)
     }
 }
 

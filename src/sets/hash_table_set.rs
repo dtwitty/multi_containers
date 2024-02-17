@@ -1,7 +1,8 @@
+use std::borrow::Borrow;
 use std::collections::{hash_set, HashSet};
 use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
-use crate::sets::Set;
+use crate::sets::{Container, Set};
 
 pub struct HashTableSet<T> {
     data: HashSet<T>,
@@ -52,14 +53,6 @@ impl<T: Hash + Eq> Set for HashTableSet<T> {
         self.data.insert(value)
     }
 
-    fn remove(&mut self, value: &Self::Elem) -> bool {
-        self.data.remove(value)
-    }
-
-    fn contains(&self, value: &Self::Elem) -> bool {
-        self.data.contains(value)
-    }
-
     fn is_empty(&self) -> bool {
         self.data.is_empty()
     }
@@ -70,6 +63,16 @@ impl<T: Hash + Eq> Set for HashTableSet<T> {
 
     fn iter(&self) -> Self::Iter<'_> {
         self.data.iter()
+    }
+}
+
+impl<T, Q> Container<Q> for HashTableSet<T> where Q: Hash + Eq + ?Sized, T: Hash + Eq + Borrow<Q> {
+    fn remove(&mut self, value: &Q) -> bool {
+        self.data.remove(value)
+    }
+
+    fn contains(&self, value: &Q) -> bool {
+        self.data.contains(value)
     }
 }
 
