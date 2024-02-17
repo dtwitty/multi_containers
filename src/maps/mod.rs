@@ -43,9 +43,9 @@ pub trait Lookup<Q>: Map where Q: ?Sized, Self::Key: Borrow<Q> {
     fn remove(&mut self, key: &Q) -> bool;
 }
 
-pub trait SortedMap: Map {
+pub trait SortedMap<Q>: Map where Q: ?Sized, Self::Key: Borrow<Q> {
     type RangeIter<'a>: Iterator<Item=(&'a Self::Key, &'a Self::Val)> where Self: 'a;
     type RangeIterMut<'a>: Iterator<Item=(&'a Self::Key, &'a mut Self::Val)> where Self: 'a;
-    fn range<R: RangeBounds<Self::Key>>(&self, range: R) -> Self::RangeIter<'_>;
-    fn range_mut<R: RangeBounds<Self::Key>>(&mut self, range: R) -> Self::RangeIterMut<'_>;
+    fn range<R>(&self, range: R) -> Self::RangeIter<'_> where R: RangeBounds<Q>;
+    fn range_mut<R>(&mut self, range: R) -> Self::RangeIterMut<'_> where R: RangeBounds<Q>;
 }

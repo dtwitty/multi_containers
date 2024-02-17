@@ -1,6 +1,7 @@
 use std::borrow::Borrow;
 use std::collections::{btree_map, BTreeMap};
 use std::fmt::{Debug, Formatter};
+use std::ops::RangeBounds;
 use crate::maps::{Lookup, Map, SortedMap};
 
 pub struct TreeMap<K, V> {
@@ -85,15 +86,18 @@ impl<K: Ord, V> Map for TreeMap<K, V> {
     }
 }
 
-impl<K: Ord, V> SortedMap for TreeMap<K, V> {
+impl<K, V, Q> SortedMap<Q> for TreeMap<K, V> where
+    K: Ord + Borrow<Q>,
+    Q: Ord + ?Sized
+{
     type RangeIter<'a> = btree_map::Range<'a, K, V> where Self: 'a;
     type RangeIterMut<'a> = btree_map::RangeMut<'a, K, V> where Self: 'a;
 
-    fn range<R: std::ops::RangeBounds<Self::Key>>(&self, range: R) -> Self::RangeIter<'_> {
+    fn range<R>(&self, range: R) -> Self::RangeIter<'_> where R: RangeBounds<Q> {
         self.data.range(range)
     }
 
-    fn range_mut<R: std::ops::RangeBounds<Self::Key>>(&mut self, range: R) -> Self::RangeIterMut<'_> {
+    fn range_mut<R>(&mut self, range: R) -> Self::RangeIterMut<'_> where R: RangeBounds<Q> {
         self.data.range_mut(range)
     }
 }

@@ -133,14 +133,24 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
     fn len(&self) -> usize {
         self.len
     }
-}
 
-impl<M> MultiMap<M> where M: SortedMap + Default, M::Val: Set + Default {
-    fn range<R: RangeBounds<M::Key>>(&self, range: R) -> impl Iterator<Item=(&M::Key, &M::Val)> {
+    fn range<Q, R>(&self, range: R) -> M::RangeIter<'_>
+        where
+            M: SortedMap<Q>,
+            M::Key: Borrow<Q>,
+            Q: ?Sized,
+            R: RangeBounds<Q>,
+    {
         self.data.range(range)
     }
 
-    fn flat_range<R: RangeBounds<M::Key>>(&self, range: R) -> impl Iterator<Item=(&M::Key, &<<M as Map>::Val as Set>::Elem)> {
+    fn flat_range<Q, R>(&self, range: R) -> impl Iterator<Item=(&M::Key, &<<M as Map>::Val as Set>::Elem)>
+        where
+            M: SortedMap<Q>,
+            M::Key: Borrow<Q>,
+            Q: ?Sized,
+            R: RangeBounds<Q>,
+    {
         self.data.range(range).flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
     }
 }
@@ -438,7 +448,7 @@ mod tests {
     fn test_borrowed_key_types() {
         let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
         map.insert("a", 1);
-        assert!(map.contains_key("a"));
+        assert!(map.range("a".."b").next().is_some());
         assert!(map.contains_key(&"a"));
         assert!(map.contains_key(&("a".to_string())[..]));
     }
