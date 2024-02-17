@@ -1,6 +1,7 @@
 mod hash_table_map;
 mod tree_map;
 
+use std::borrow::Borrow;
 use std::ops::RangeBounds;
 pub use self::hash_table_map::HashTableMap;
 pub use self::tree_map::TreeMap;
@@ -26,17 +27,20 @@ pub trait Map {
     type ValIter<'a>: Iterator<Item=&'a Self::Val> where Self: 'a;
 
     fn insert(&mut self, key: Self::Key, value: Self::Val) -> Option<Self::Val>;
-    fn get(&self, key: &Self::Key) -> Option<&Self::Val>;
-    fn get_mut(&mut self, key: &Self::Key) -> Option<&mut Self::Val>;
     fn get_or_insert<F: FnOnce() -> Self::Val>(&mut self, key: Self::Key, make_value: F) -> &mut Self::Val;
-    fn remove(&mut self, key: &Self::Key) -> bool;
-    fn contains(&self, key: &Self::Key) -> bool;
     fn is_empty(&self) -> bool;
     fn len(&self) -> usize;
     fn iter(&self) -> Self::Iter<'_>;
     fn iter_mut(&mut self) -> Self::IterMut<'_>;
     fn keys(&self) -> Self::KeyIter<'_>;
     fn values(&self) -> Self::ValIter<'_>;
+}
+
+pub trait Lookup<Q>: Map where Q: ?Sized, Self::Key: Borrow<Q> {
+    fn contains_key(&self, key: &Q) -> bool;
+    fn get(&self, key: &Q) -> Option<&Self::Val>;
+    fn get_mut(&mut self, key: &Q) -> Option<&mut Self::Val>;
+    fn remove(&mut self, key: &Q) -> bool;
 }
 
 pub trait SortedMap: Map {

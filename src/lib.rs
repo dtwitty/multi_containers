@@ -7,11 +7,12 @@ mod sets;
 mod maps;
 mod builder;
 
+use std::borrow::Borrow;
 use std::fmt::{Debug, Formatter};
 use std::ops::RangeBounds;
 use sets::Set;
 use maps::Map;
-use crate::maps::SortedMap;
+use crate::maps::{Lookup, SortedMap};
 
 
 struct MultiMap<M> {
@@ -67,7 +68,7 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
         r
     }
 
-    fn remove(&mut self, key: &M::Key, value: &<<M as Map>::Val as Set>::Elem) -> bool {
+    fn remove<Q>(&mut self, key: &Q, value: &<<M as Map>::Val as Set>::Elem) -> bool where M: Lookup<Q>, M::Key: Borrow<Q>, Q: ?Sized {
         if let Some(set) = self.data.get_mut(key) {
             if set.remove(value) {
                 self.len -= 1;
@@ -80,15 +81,15 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
         false
     }
 
-    fn contains(&self, key: &M::Key, value: &<<M as Map>::Val as Set>::Elem) -> bool {
+    fn contains<Q>(&self, key: &Q, value: &<<M as Map>::Val as Set>::Elem) -> bool where M: Lookup<Q>, M::Key: Borrow<Q>, Q: ?Sized {
         self.data.get(key).map_or(false, |set| set.contains(value))
     }
 
-    fn contains_key(&self, key: &M::Key) -> bool {
-        self.data.contains(key)
+    fn contains_key<Q>(&self, key: &Q) -> bool where M: Lookup<Q>, M::Key: Borrow<Q>, Q: ?Sized {
+        self.data.contains_key(key)
     }
 
-    fn get(&self, key: &M::Key) -> Option<&M::Val> {
+    fn get<Q>(&self, key: &Q) -> Option<&M::Val> where M: Lookup<Q>, M::Key: Borrow<Q>, Q: ?Sized {
         self.data.get(key)
     }
 
@@ -100,7 +101,7 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
         self.data.values().flat_map(|s| s.iter())
     }
 
-    fn iter(&self) -> M::Iter<'_>{
+    fn iter(&self) -> M::Iter<'_> {
         self.data.iter()
     }
 
@@ -405,6 +406,24 @@ mod tests {
         let expected = vec![(&1, &2), (&1, &3)];
         let actual = map.flat_range(1..2).collect::<Vec<_>>();
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_borrowed_lookup_types() {
+        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
+        map.insert("a".to_string(), 1);
+        assert!(map.contains_key("a"));
+        let a: String = "a".to_string();
+        assert!(map.contains_key(&a));
+    }
+
+    #[test]
+    fn test_borrowed_key_types() {
+        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
+        map.insert("a", 1);
+        assert!(map.contains_key("a"));
+        assert!(map.contains_key(&"a"));
+        assert!(map.contains_key(&("a".to_string())[..]));
     }
 }
 

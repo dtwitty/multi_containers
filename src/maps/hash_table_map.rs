@@ -1,7 +1,8 @@
+use std::borrow::Borrow;
 use std::collections::{hash_map, HashMap};
 use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
-use crate::maps::Map;
+use crate::maps::{Lookup, Map};
 
 pub struct HashTableMap<K, V> {
     data: HashMap<K, V>,
@@ -56,24 +57,8 @@ impl<K: Hash + Eq, V> Map for HashTableMap<K, V> {
         self.data.insert(key, value)
     }
 
-    fn get(&self, key: &Self::Key) -> Option<&Self::Val> {
-        self.data.get(key)
-    }
-
-    fn get_mut(&mut self, key: &Self::Key) -> Option<&mut Self::Val> {
-        self.data.get_mut(key)
-    }
-
     fn get_or_insert<F: FnOnce() -> Self::Val>(&mut self, key: Self::Key, make_value: F) -> &mut Self::Val {
         self.data.entry(key).or_insert_with(make_value)
-    }
-
-    fn remove(&mut self, key: &Self::Key) -> bool {
-        self.data.remove(key).is_some()
-    }
-
-    fn contains(&self, key: &Self::Key) -> bool {
-        self.data.contains_key(key)
     }
 
     fn is_empty(&self) -> bool {
@@ -98,5 +83,23 @@ impl<K: Hash + Eq, V> Map for HashTableMap<K, V> {
 
     fn values(&self) -> Self::ValIter<'_> {
         self.data.values()
+    }
+}
+
+impl<K, V, Q> Lookup<Q> for HashTableMap<K, V> where K: Eq + Hash + Borrow<Q>, Q: Hash + Eq + ?Sized {
+    fn contains_key(&self, key: &Q) -> bool {
+        self.data.contains_key(key)
+    }
+
+    fn get(&self, key: &Q) -> Option<&V> {
+        self.data.get(key)
+    }
+
+    fn get_mut(&mut self, key: &Q) -> Option<&mut V> {
+        self.data.get_mut(key)
+    }
+
+    fn remove(&mut self, key: &Q) -> bool {
+        self.data.remove(key).is_some()
     }
 }

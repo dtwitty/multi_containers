@@ -1,6 +1,7 @@
+use std::borrow::Borrow;
 use std::collections::{btree_map, BTreeMap};
 use std::fmt::{Debug, Formatter};
-use crate::maps::{Map, SortedMap};
+use crate::maps::{Lookup, Map, SortedMap};
 
 pub struct TreeMap<K, V> {
     data: BTreeMap<K, V>,
@@ -55,24 +56,8 @@ impl<K: Ord, V> Map for TreeMap<K, V> {
         self.data.insert(key, value)
     }
 
-    fn get(&self, key: &Self::Key) -> Option<&Self::Val> {
-        self.data.get(key)
-    }
-
-    fn get_mut(&mut self, key: &Self::Key) -> Option<&mut Self::Val> {
-        self.data.get_mut(key)
-    }
-
     fn get_or_insert<F: FnOnce() -> Self::Val>(&mut self, key: Self::Key, make_value: F) -> &mut Self::Val {
         self.data.entry(key).or_insert_with(make_value)
-    }
-
-    fn remove(&mut self, key: &Self::Key) -> bool {
-        self.data.remove(key).is_some()
-    }
-
-    fn contains(&self, key: &Self::Key) -> bool {
-        self.data.contains_key(key)
     }
 
     fn is_empty(&self) -> bool {
@@ -110,5 +95,23 @@ impl<K: Ord, V> SortedMap for TreeMap<K, V> {
 
     fn range_mut<R: std::ops::RangeBounds<Self::Key>>(&mut self, range: R) -> Self::RangeIterMut<'_> {
         self.data.range_mut(range)
+    }
+}
+
+impl<K, V, Q> Lookup<Q> for TreeMap<K, V> where K: Ord + Borrow<Q>, Q: Ord + ?Sized {
+    fn contains_key(&self, key: &Q) -> bool {
+        self.data.contains_key(key)
+    }
+
+    fn get(&self, key: &Q) -> Option<&V> {
+        self.data.get(key)
+    }
+
+    fn get_mut(&mut self, key: &Q) -> Option<&mut V> {
+        self.data.get_mut(key)
+    }
+
+    fn remove(&mut self, key: &Q) -> bool {
+        self.data.remove(key).is_some()
     }
 }
