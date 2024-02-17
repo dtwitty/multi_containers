@@ -74,7 +74,7 @@ impl<T: Ord > Set for TreeSet<T> {
 }
 
 impl<T: Ord > SortedSet for TreeSet<T> {
-    type RangeIter<'a> = impl Iterator<Item=&'a T> where Self: 'a;
+    type RangeIter<'a> = btree_set::Range<'a, T> where T: 'a;
 
     fn range<R: RangeBounds<Self::Elem>>(&self, range: R) -> Self::RangeIter<'_> {
         self.data.range(range)

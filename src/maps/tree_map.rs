@@ -101,8 +101,8 @@ impl<K: Ord, V> Map for TreeMap<K, V> {
 }
 
 impl<K: Ord, V> SortedMap for TreeMap<K, V> {
-    type RangeIter<'a> = impl Iterator<Item=(&'a K, &'a V)> where Self: 'a;
-    type RangeIterMut<'a> = impl Iterator<Item=(&'a K, &'a mut V)> where Self: 'a;
+    type RangeIter<'a> = btree_map::Range<'a, K, V> where Self: 'a;
+    type RangeIterMut<'a> = btree_map::RangeMut<'a, K, V> where Self: 'a;
 
     fn range<R: std::ops::RangeBounds<Self::Key>>(&self, range: R) -> Self::RangeIter<'_> {
         self.data.range(range)
