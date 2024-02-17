@@ -8,7 +8,7 @@ mod sets;
 mod maps;
 
 use std::borrow::Borrow;
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
 use std::ops::RangeBounds;
 use sets::Set;
 use maps::Map;
@@ -16,71 +16,29 @@ use crate::maps::{Lookup, SortedMap};
 use crate::sets::Container;
 
 
+#[derive(Default, Debug, PartialEq, Eq, Clone)]
 pub struct MultiMap<M> {
     data: M,
+    length: usize,
 }
 
 impl<M: Default> MultiMap<M> {
     fn new() -> Self {
         MultiMap {
-            data: M::default(),
+            data: Default::default(),
+            length: 0,
         }
-    }
-}
-
-impl<M: Default> Default for MultiMap<M> {
-    fn default() -> Self {
-        MultiMap::new()
-    }
-}
-
-impl<M: PartialEq> PartialEq for MultiMap<M> {
-    fn eq(&self, other: &Self) -> bool {
-        self.data == other.data
-    }
-}
-
-impl<M: Eq> Eq for MultiMap<M> {}
-
-impl<M: Clone> Clone for MultiMap<M> {
-    fn clone(&self) -> Self {
-        MultiMap {
-            data: self.data.clone(),
-        }
-    }
-}
-
-impl<M: Debug> Debug for MultiMap<M> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        self.data.fmt(f)
     }
 }
 
 impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
     fn insert(&mut self, key: M::Key, value: <<M as Map>::Val as Set>::Elem) -> bool {
-        let set = self.data.get_or_insert(key, Default::default);
-        let r = set.insert(value);
-        r
-    }
-
-    fn remove<Q, R>(&mut self, key: &Q, value: &R) -> bool
-        where
-            M: Lookup<Q>,
-            M::Key: Borrow<Q>,
-            Q: ?Sized,
-            M::Val: Container<R>,
-            <<M as Map>::Val as Set>::Elem: Borrow<R>,
-            R: ?Sized
-    {
-        if let Some(set) = self.data.get_mut(key) {
-            if set.remove(value) {
-                if set.is_empty() {
-                    self.data.remove(key);
-                }
-                return true;
-            }
+        if self.data.get_or_insert(key, Default::default).insert(value) {
+            self.length += 1;
+            true
+        } else {
+            false
         }
-        false
     }
 
     fn contains<Q, R>(&mut self, key: &Q, value: &R) -> bool
@@ -97,6 +55,31 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
 
     fn contains_key<Q>(&self, key: &Q) -> bool where M: Lookup<Q>, M::Key: Borrow<Q>, Q: ?Sized {
         self.data.contains_key(key)
+    }
+
+    fn remove<Q, R>(&mut self, key: &Q, value: &R) -> bool
+        where
+            M: Lookup<Q>,
+            M::Key: Borrow<Q>,
+            Q: ?Sized,
+            M::Val: Container<R>,
+            <<M as Map>::Val as Set>::Elem: Borrow<R>,
+            R: ?Sized
+    {
+        if let Some(set) = self.data.get_mut(key) {
+            if set.remove(value) {
+                self.length -= 1;
+                if set.is_empty() {
+                    self.data.remove(key);
+                }
+                return true;
+            }
+        }
+        false
+    }
+
+    fn remove_key<Q>(&mut self, key: &Q) -> bool where M: Lookup<Q>, M::Key: Borrow<Q>, Q: ?Sized {
+        self.data.remove(key)
     }
 
     fn get<Q>(&self, key: &Q) -> Option<&M::Val> where M: Lookup<Q>, M::Key: Borrow<Q>, Q: ?Sized {
@@ -127,8 +110,8 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
         self.data.len()
     }
 
-    fn total_len(&self) -> usize {
-        self.data.values().map(|s| s.len()).sum()
+    fn len(&self) -> usize {
+        self.length
     }
 
     fn range<Q, R>(&self, range: R) -> M::RangeIter<'_>
@@ -151,7 +134,6 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
         self.data.range(range).flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -266,21 +248,21 @@ mod tests {
     }
 
     #[test]
-    fn test_hash_multi_map_total_len() {
+    fn test_hash_multi_map_num_values() {
         let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();
-        assert_eq!(map.total_len(), 0);
+        assert_eq!(map.len(), 0);
         assert!(map.insert(1, 2));
-        assert_eq!(map.total_len(), 1);
+        assert_eq!(map.len(), 1);
         assert!(map.insert(1, 3));
-        assert_eq!(map.total_len(), 2);
+        assert_eq!(map.len(), 2);
         assert!(map.insert(2, 3));
-        assert_eq!(map.total_len(), 3);
+        assert_eq!(map.len(), 3);
         assert!(map.remove(&1, &2));
-        assert_eq!(map.total_len(), 2);
+        assert_eq!(map.len(), 2);
         assert!(map.remove(&1, &3));
-        assert_eq!(map.total_len(), 1);
+        assert_eq!(map.len(), 1);
         assert!(map.remove(&2, &3));
-        assert_eq!(map.total_len(), 0);
+        assert_eq!(map.len(), 0);
     }
 
     #[test]
@@ -407,21 +389,21 @@ mod tests {
     }
 
     #[test]
-    fn test_sorted_multi_map_total_len() {
+    fn test_sorted_multi_map_len() {
         let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
-        assert_eq!(map.total_len(), 0);
+        assert_eq!(map.len(), 0);
         assert!(map.insert(1, 2));
-        assert_eq!(map.total_len(), 1);
+        assert_eq!(map.len(), 1);
         assert!(map.insert(1, 3));
-        assert_eq!(map.total_len(), 2);
+        assert_eq!(map.len(), 2);
         assert!(map.insert(2, 3));
-        assert_eq!(map.total_len(), 3);
+        assert_eq!(map.len(), 3);
         assert!(map.remove(&1, &2));
-        assert_eq!(map.total_len(), 2);
+        assert_eq!(map.len(), 2);
         assert!(map.remove(&1, &3));
-        assert_eq!(map.total_len(), 1);
+        assert_eq!(map.len(), 1);
         assert!(map.remove(&2, &3));
-        assert_eq!(map.total_len(), 0);
+        assert_eq!(map.len(), 0);
     }
 
     #[test]
@@ -447,6 +429,18 @@ mod tests {
         let expected = vec![(&1, &2), (&1, &3)];
         let actual = map.flat_range(1..2).collect::<Vec<_>>();
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_sorted_multi_map_remove_key() {
+        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();
+        assert!(map.insert(1, 2));
+        assert!(map.insert(1, 3));
+        assert!(map.insert(2, 3));
+        assert!(map.remove_key(&1));
+        assert!(!map.remove_key(&1));
+        assert!(map.remove_key(&2));
+        assert!(!map.remove_key(&2));
     }
 
     #[test]
