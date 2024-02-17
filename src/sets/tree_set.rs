@@ -1,8 +1,7 @@
 use std::borrow::Borrow;
 use std::collections::{btree_set, BTreeSet};
 use std::fmt::{Debug, Formatter};
-use std::ops::RangeBounds;
-use crate::sets::{Container, Set, SortedSet};
+use crate::sets::{Container, Set};
 
 pub struct TreeSet<T> {
     data: BTreeSet<T>,
@@ -76,10 +75,3 @@ impl <T, Q> Container<Q> for TreeSet<T> where Q: Ord + ?Sized, T: Ord + Borrow<Q
     }
 }
 
-impl<T: Ord > SortedSet for TreeSet<T> {
-    type RangeIter<'a> = btree_set::Range<'a, T> where T: 'a;
-
-    fn range<R: RangeBounds<Self::Elem>>(&self, range: R) -> Self::RangeIter<'_> {
-        self.data.range(range)
-    }
-}

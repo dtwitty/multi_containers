@@ -2,7 +2,6 @@ mod hash_table_set;
 mod tree_set;
 
 use std::borrow::Borrow;
-use std::ops::RangeBounds;
 pub use self::hash_table_set::HashTableSet;
 pub use self::tree_set::TreeSet;
 
@@ -33,12 +32,4 @@ pub trait Container<Q>: Set where Q: ?Sized, Self::Elem: Borrow<Q> {
 
     /// Returns `true` if the set contains the given value.
     fn contains(&self, value: &Q) -> bool;
-}
-
-pub trait SortedSet: Set {
-    /// The type of iterator over the elements of the set within a range.
-    type RangeIter<'a>: Iterator<Item=&'a Self::Elem> where Self: 'a;
-
-    /// Returns an iterator over the elements of the set within the given range.
-    fn range<R: RangeBounds<Self::Elem>>(&self, range: R) -> Self::RangeIter<'_>;
 }
