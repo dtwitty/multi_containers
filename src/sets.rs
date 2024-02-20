@@ -1,5 +1,5 @@
 use std::borrow::Borrow;
-use std::collections::{btree_set, BTreeSet, hash_set, HashSet};
+use std::collections::{btree_set, hash_set, BTreeSet, HashSet};
 use std::hash::Hash;
 
 /// A set of elements.
@@ -8,7 +8,9 @@ pub trait Set {
     type Elem;
 
     /// The type of iterator over the elements of the set.
-    type Iter<'a>: Iterator<Item=&'a Self::Elem> where Self: 'a;
+    type Iter<'a>: Iterator<Item = &'a Self::Elem>
+    where
+        Self: 'a;
 
     /// Inserts a value into the set. Returns `true` if the value was not already present.
     fn insert(&mut self, value: Self::Elem) -> bool;
@@ -23,7 +25,11 @@ pub trait Set {
     fn iter(&self) -> Self::Iter<'_>;
 }
 
-pub trait Container<Q>: Set where Q: ?Sized, Self::Elem: Borrow<Q> {
+pub trait Container<Q>: Set
+where
+    Q: ?Sized,
+    Self::Elem: Borrow<Q>,
+{
     /// Removes a value from the set. Returns `true` if the value was present.
     fn remove(&mut self, value: &Q) -> bool;
 
@@ -31,7 +37,10 @@ pub trait Container<Q>: Set where Q: ?Sized, Self::Elem: Borrow<Q> {
     fn contains(&self, value: &Q) -> bool;
 }
 
-impl<T: Hash + Eq> Set for HashSet<T> {
+impl<T> Set for HashSet<T>
+where
+    T: Hash + Eq,
+{
     type Elem = T;
 
     type Iter<'a> = hash_set::Iter<'a, T> where T: 'a;
@@ -53,7 +62,11 @@ impl<T: Hash + Eq> Set for HashSet<T> {
     }
 }
 
-impl<T, Q> Container<Q> for HashSet<T> where Q: Hash + Eq + ?Sized, T: Hash + Eq + Borrow<Q> {
+impl<T, Q> Container<Q> for HashSet<T>
+where
+    Q: Hash + Eq + ?Sized,
+    T: Hash + Eq + Borrow<Q>,
+{
     fn remove(&mut self, value: &Q) -> bool {
         self.remove(value)
     }
@@ -63,7 +76,10 @@ impl<T, Q> Container<Q> for HashSet<T> where Q: Hash + Eq + ?Sized, T: Hash + Eq
     }
 }
 
-impl<T: Ord> Set for BTreeSet<T> {
+impl<T> Set for BTreeSet<T>
+where
+    T: Ord,
+{
     type Elem = T;
     type Iter<'a> = btree_set::Iter<'a, T> where T: 'a;
 
@@ -84,7 +100,11 @@ impl<T: Ord> Set for BTreeSet<T> {
     }
 }
 
-impl<T, Q> Container<Q> for BTreeSet<T> where Q: Ord + ?Sized, T: Ord + Borrow<Q> {
+impl<T, Q> Container<Q> for BTreeSet<T>
+where
+    Q: Ord + ?Sized,
+    T: Ord + Borrow<Q>,
+{
     fn remove(&mut self, value: &Q) -> bool {
         self.remove(value)
     }

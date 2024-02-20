@@ -1,20 +1,17 @@
 #![feature(impl_trait_in_assoc_type)]
 #![warn(missing_docs)]
 
-
-pub
-mod builder;
-mod sets;
+pub mod builder;
 mod maps;
+mod sets;
 
+use crate::maps::{Lookup, SortedMap};
+use crate::sets::Container;
+use maps::Map;
+use sets::Set;
 use std::borrow::Borrow;
 use std::fmt::Debug;
 use std::ops::RangeBounds;
-use sets::Set;
-use maps::Map;
-use crate::maps::{Lookup, SortedMap};
-use crate::sets::Container;
-
 
 #[derive(Default, Debug, PartialEq, Eq, Clone)]
 pub struct MultiMap<M> {
@@ -22,7 +19,10 @@ pub struct MultiMap<M> {
     length: usize,
 }
 
-impl<M: Default> MultiMap<M> {
+impl<M> MultiMap<M>
+where
+    M: Default,
+{
     fn new() -> Self {
         MultiMap {
             data: Default::default(),
@@ -31,7 +31,11 @@ impl<M: Default> MultiMap<M> {
     }
 }
 
-impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
+impl<M> MultiMap<M>
+where
+    M: Map,
+    M::Val: Set + Default,
+{
     fn insert(&mut self, key: M::Key, value: <<M as Map>::Val as Set>::Elem) -> bool {
         if self.data.get_or_insert(key, Default::default).insert(value) {
             self.length += 1;
@@ -42,29 +46,34 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
     }
 
     fn contains<Q, R>(&mut self, key: &Q, value: &R) -> bool
-        where
-            M: Lookup<Q>,
-            M::Key: Borrow<Q>,
-            Q: ?Sized,
-            M::Val: Container<R>,
-            <<M as Map>::Val as Set>::Elem: Borrow<R>,
-            R: ?Sized
+    where
+        M: Lookup<Q>,
+        M::Key: Borrow<Q>,
+        Q: ?Sized,
+        M::Val: Container<R>,
+        <<M as Map>::Val as Set>::Elem: Borrow<R>,
+        R: ?Sized,
     {
         self.data.get(key).map_or(false, |set| set.contains(value))
     }
 
-    fn contains_key<Q>(&self, key: &Q) -> bool where M: Lookup<Q>, M::Key: Borrow<Q>, Q: ?Sized {
+    fn contains_key<Q>(&self, key: &Q) -> bool
+    where
+        M: Lookup<Q>,
+        M::Key: Borrow<Q>,
+        Q: ?Sized,
+    {
         self.data.contains_key(key)
     }
 
     fn remove<Q, R>(&mut self, key: &Q, value: &R) -> bool
-        where
-            M: Lookup<Q>,
-            M::Key: Borrow<Q>,
-            Q: ?Sized,
-            M::Val: Container<R>,
-            <<M as Map>::Val as Set>::Elem: Borrow<R>,
-            R: ?Sized
+    where
+        M: Lookup<Q>,
+        M::Key: Borrow<Q>,
+        Q: ?Sized,
+        M::Val: Container<R>,
+        <<M as Map>::Val as Set>::Elem: Borrow<R>,
+        R: ?Sized,
     {
         if let Some(set) = self.data.get_mut(key) {
             if set.remove(value) {
@@ -78,11 +87,21 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
         false
     }
 
-    fn remove_key<Q>(&mut self, key: &Q) -> bool where M: Lookup<Q>, M::Key: Borrow<Q>, Q: ?Sized {
+    fn remove_key<Q>(&mut self, key: &Q) -> bool
+    where
+        M: Lookup<Q>,
+        M::Key: Borrow<Q>,
+        Q: ?Sized,
+    {
         self.data.remove(key)
     }
 
-    fn get<Q>(&self, key: &Q) -> Option<&M::Val> where M: Lookup<Q>, M::Key: Borrow<Q>, Q: ?Sized {
+    fn get<Q>(&self, key: &Q) -> Option<&M::Val>
+    where
+        M: Lookup<Q>,
+        M::Key: Borrow<Q>,
+        Q: ?Sized,
+    {
         self.data.get(key)
     }
 
@@ -90,7 +109,7 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
         self.data.keys()
     }
 
-    fn values(&self) -> impl Iterator<Item=&<<M as Map>::Val as Set>::Elem> {
+    fn values(&self) -> impl Iterator<Item = &<<M as Map>::Val as Set>::Elem> {
         self.data.values().flat_map(|s| s.iter())
     }
 
@@ -98,7 +117,7 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
         self.data.iter()
     }
 
-    fn flat_iter(&self) -> impl Iterator<Item=(&M::Key, &<<M as Map>::Val as Set>::Elem)> {
+    fn flat_iter(&self) -> impl Iterator<Item = (&M::Key, &<<M as Map>::Val as Set>::Elem)> {
         self.iter().flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
     }
 
@@ -115,23 +134,28 @@ impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
     }
 
     fn range<Q, R>(&self, range: R) -> M::RangeIter<'_>
-        where
-            M: SortedMap<Q>,
-            M::Key: Borrow<Q>,
-            Q: ?Sized,
-            R: RangeBounds<Q>,
+    where
+        M: SortedMap<Q>,
+        M::Key: Borrow<Q>,
+        Q: ?Sized,
+        R: RangeBounds<Q>,
     {
         self.data.range(range)
     }
 
-    fn flat_range<Q, R>(&self, range: R) -> impl Iterator<Item=(&M::Key, &<<M as Map>::Val as Set>::Elem)>
-        where
-            M: SortedMap<Q>,
-            M::Key: Borrow<Q>,
-            Q: ?Sized,
-            R: RangeBounds<Q>,
+    fn flat_range<Q, R>(
+        &self,
+        range: R,
+    ) -> impl Iterator<Item = (&M::Key, &<<M as Map>::Val as Set>::Elem)>
+    where
+        M: SortedMap<Q>,
+        M::Key: Borrow<Q>,
+        Q: ?Sized,
+        R: RangeBounds<Q>,
     {
-        self.data.range(range).flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
+        self.data
+            .range(range)
+            .flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
     }
 }
 
@@ -416,7 +440,10 @@ mod tests {
         assert!(map.insert(4, 5));
 
         let expected = vec![&3, &4];
-        let actual = map.range(2..=3).flat_map(|(_, s)| s.iter()).collect::<Vec<_>>();
+        let actual = map
+            .range(2..=3)
+            .flat_map(|(_, s)| s.iter())
+            .collect::<Vec<_>>();
         assert_eq!(actual, expected);
     }
 
@@ -461,4 +488,3 @@ mod tests {
         assert!(map.contains_key(&("a".to_string())[..]));
     }
 }
-
