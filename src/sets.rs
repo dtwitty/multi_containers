@@ -25,6 +25,7 @@ pub trait Set {
     fn iter(&self) -> Self::Iter<'_>;
 }
 
+/// A helper trait that allows us to query the set more flexibly, and matches the API of `HashMap` and `BTreeMap`.
 pub trait Container<Q>: Set
 where
     Q: ?Sized,
