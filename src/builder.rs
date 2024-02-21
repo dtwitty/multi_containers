@@ -8,65 +8,64 @@ pub struct MultiMapBuilder {}
 
 impl MultiMapBuilder {
     /// Configures the multi-map to use a hash set for the values.
-    pub fn hash_values<V>() -> MultiMapBuilderWithVals<impl Fn() -> HashSet<V>>
+    pub fn hash_keys<K, S>() -> MultiMapBuilderWithKeys<impl Fn() -> HashMap<K, S>>
     where
-        V: Hash + Eq,
+        K: Hash + Eq,
     {
-        Self::with_value_set_factory(HashSet::new)
+        Self::with_map_factory(HashMap::new)
     }
 
     /// Configures the multi-map to use a sorted set for the values.
-    pub fn sorted_values<V>() -> MultiMapBuilderWithVals<impl Fn() -> BTreeSet<V>>
+    pub fn sorted_keys<K, S>() -> MultiMapBuilderWithKeys<impl Fn() -> BTreeMap<K, S>>
     where
-        V: Ord,
+        K: Ord,
     {
-        Self::with_value_set_factory(BTreeSet::new)
+        Self::with_map_factory(BTreeMap::new)
     }
 
     /// An advanced method for configuring the multi-map to use a custom value set factory.
     /// This is useful if you want to use your own custom set type.
     /// To do anything useful, your output type should implement the `Set` trait.
-    pub fn with_value_set_factory<F>(value_set_factory: F) -> MultiMapBuilderWithVals<F> {
-        MultiMapBuilderWithVals { value_set_factory }
+    pub fn with_map_factory<F>(map_factory: F) -> MultiMapBuilderWithKeys<F> {
+        MultiMapBuilderWithKeys { map_factory }
     }
 }
 
-/// A builder for a multi-map that has a known type for value sets.
-pub struct MultiMapBuilderWithVals<F> {
-    value_set_factory: F,
+/// A builder for a multi-map that has a known type for the map.
+pub struct MultiMapBuilderWithKeys<F> {
+    map_factory: F,
 }
 
-impl<F, O> MultiMapBuilderWithVals<F>
+impl<F, O> MultiMapBuilderWithKeys<F>
 where
     F: Fn() -> O,
 {
     /// Configures the multi-map to use a hash map for the keys.
-    pub fn hash_keys<K>(
-        self,
-    ) -> MultiMapBuilderWithKeysAndVals<impl Fn() -> HashMap<K, F::Output>, F>
+    pub fn hash_values<V>(self) -> MultiMapBuilderWithKeysAndVals<F, impl Fn() -> HashSet<V>>
     where
-        K: Hash + Eq,
+        V: Hash + Eq,
     {
-        self.with_map_factory(HashMap::new)
+        self.with_value_set_factory(HashSet::new)
     }
 
     /// Configures the multi-map to use a sorted map for the keys.
-    pub fn sorted_keys<K>(
-        self,
-    ) -> MultiMapBuilderWithKeysAndVals<impl Fn() -> BTreeMap<K, F::Output>, F>
+    pub fn sorted_values<V>(self) -> MultiMapBuilderWithKeysAndVals<F, impl Fn() -> BTreeSet<V>>
     where
-        K: Ord,
+        V: Ord,
     {
-        self.with_map_factory(BTreeMap::new)
+        self.with_value_set_factory(BTreeSet::new)
     }
 
     /// An advanced method for configuring the multi-map to use a custom map factory.
     /// This is useful if you want to use your own custom map type.
     /// To do anything useful, your output type should implement the `Map` trait.
-    pub fn with_map_factory<G>(self, map_factory: G) -> MultiMapBuilderWithKeysAndVals<G, F> {
+    pub fn with_value_set_factory<G>(
+        self,
+        value_set_factory: G,
+    ) -> MultiMapBuilderWithKeysAndVals<F, G> {
         MultiMapBuilderWithKeysAndVals {
-            map_factory,
-            value_set_factory: self.value_set_factory,
+            map_factory: self.map_factory,
+            value_set_factory,
         }
     }
 }

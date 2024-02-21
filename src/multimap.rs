@@ -452,41 +452,41 @@ mod tests {
 
     base_test_suite!(
         hash_values_hash_keys,
-        MultiMapBuilder::hash_values().hash_keys().build()
+        MultiMapBuilder::hash_keys().hash_values().build()
     );
 
     base_test_suite!(
         hash_values_sorted_keys,
-        MultiMapBuilder::hash_values().sorted_keys().build()
+        MultiMapBuilder::sorted_keys().hash_values().build()
     );
 
     sorted_keys_test_suite!(
         hash_values_sorted_keys_sorted_key_tests,
-        MultiMapBuilder::hash_values().sorted_keys().build()
+        MultiMapBuilder::sorted_keys().hash_values().build()
     );
 
     base_test_suite!(
         sorted_values_hash_keys,
-        MultiMapBuilder::sorted_values().hash_keys().build()
+        MultiMapBuilder::hash_keys().sorted_values().build()
     );
 
     sorted_values_test_suite!(
         sorted_values_hashs_keys_sorted_values_tests,
-        MultiMapBuilder::sorted_values().hash_keys().build()
+        MultiMapBuilder::hash_keys().sorted_values().build()
     );
 
     base_test_suite!(
         sorted_values_sorted_keys,
-        MultiMapBuilder::sorted_values().sorted_keys().build()
+        MultiMapBuilder::sorted_keys().sorted_values().build()
     );
 
     sorted_keys_test_suite!(
         sorted_values_sorted_keys_sorted_key_tests,
-        MultiMapBuilder::sorted_values().sorted_keys().build()
+        MultiMapBuilder::sorted_keys().sorted_values().build()
     );
 
     sorted_values_test_suite!(
         sorted_values_sorted_keys_sorted_values_tests,
-        MultiMapBuilder::sorted_values().sorted_keys().build()
+        MultiMapBuilder::sorted_keys().sorted_values().build()
     );
 }
