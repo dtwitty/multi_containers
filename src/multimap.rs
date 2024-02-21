@@ -92,7 +92,7 @@ where
     }
 
     /// Removes all mappings with the given key from the multi-map. Returns `true` if any mappings were present.
-    pub fn remove_key<Q>(&mut self, key: &Q) -> bool
+    pub fn remove_key<Q>(&mut self, key: &Q) -> Option<M::Val>
     where
         M: Lookup<Q>,
         M::Key: Borrow<Q>,
@@ -230,12 +230,8 @@ mod tests {
                 fn test_remove_key() {
                     let mut map = $map_maker;
                     assert_eq!(map.insert(1, 2), true);
-                    assert_eq!(map.remove_key(&1), true);
-                    assert_eq!(map.remove_key(&1), false);
-                    assert_eq!(map.insert(1, 2), true);
-                    assert_eq!(map.insert(1, 3), true);
-                    assert_eq!(map.remove_key(&1), true);
-                    assert_eq!(map.remove_key(&1), false);
+                    assert_eq!(map.remove_key(&1).unwrap().contains(&2), true);
+                    assert_eq!(map.remove_key(&1), None);
                 }
 
                 #[test]
@@ -316,9 +312,9 @@ mod tests {
                     assert_eq!(map.num_keys(), 2);
                     assert_eq!(map.insert(2, 4), true);
                     assert_eq!(map.num_keys(), 2);
-                    assert_eq!(map.remove_key(&1), true);
+                    assert!(map.remove_key(&1).is_some());
                     assert_eq!(map.num_keys(), 1);
-                    assert_eq!(map.remove_key(&1), false);
+                    assert!(map.remove_key(&1).is_none());
                     assert_eq!(map.num_keys(), 1);
                 }
 

@@ -6,14 +6,18 @@
 /// Provides a convenient way to construct multi-maps.
 pub mod multimap_builder;
 
-/// Defines the MultiMap type.
+/// Defines the `MultiMap` type.
 pub mod multimap;
+
+/// Defines the `MultiSet` type.
+pub mod multiset;
 
 /// Traits for working with maps.
 pub mod maps;
 
 /// Traits for working with sets.
 pub mod sets;
+
 
 pub use crate::multimap_builder::MultiMapBuilder;
 pub use crate::multimap::MultiMap;

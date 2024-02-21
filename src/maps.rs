@@ -76,7 +76,7 @@ where
     fn get_mut(&mut self, key: &Q) -> Option<&mut Self::Val>;
 
     /// Removes a value from the map. Returns `true` if the value was present.
-    fn remove(&mut self, key: &Q) -> bool;
+    fn remove(&mut self, key: &Q) -> Option<Self::Val>;
 }
 
 /// A map that is sorted by its keys.
@@ -170,8 +170,8 @@ where
         self.get_mut(key)
     }
 
-    fn remove(&mut self, key: &Q) -> bool {
-        self.remove(key).is_some()
+    fn remove(&mut self, key: &Q) -> Option<V> {
+        self.remove(key)
     }
 }
 
@@ -262,7 +262,7 @@ where
         self.get_mut(key)
     }
 
-    fn remove(&mut self, key: &Q) -> bool {
-        self.remove(key).is_some()
+    fn remove(&mut self, key: &Q) -> Option<V>{
+        self.remove(key)
     }
 }

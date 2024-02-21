@@ -1,3 +1,5 @@
+use crate::maps::{Lookup, Map};
+use crate::multiset::MultiSet;
 use std::borrow::Borrow;
 use std::collections::{btree_set, hash_set, BTreeSet, HashSet};
 use std::hash::Hash;
@@ -108,6 +110,46 @@ where
 {
     fn remove(&mut self, value: &Q) -> bool {
         self.remove(value)
+    }
+
+    fn contains(&self, value: &Q) -> bool {
+        self.contains(value)
+    }
+}
+
+impl<M> Set for MultiSet<M>
+where
+    M: Map<Val = usize>,
+{
+    type Elem = M::Key;
+    type Iter<'a> = impl Iterator<Item = &'a M::Key> where M: 'a;
+
+    fn insert(&mut self, value: Self::Elem) -> bool {
+        self.insert(value) == 0
+    }
+
+    fn is_empty(&self) -> bool {
+        self.is_empty()
+    }
+
+    fn len(&self) -> usize {
+        self.len()
+    }
+
+    fn iter(&self) -> Self::Iter<'_> {
+        self.iter()
+    }
+}
+
+impl<M, Q> Container<Q> for MultiSet<M>
+where
+    M: Map<Val = usize>,
+    M: Lookup<Q>,
+    M::Key: Borrow<Q>,
+    Q: ?Sized,
+{
+    fn remove(&mut self, value: &Q) -> bool {
+        self.remove(value) == 1
     }
 
     fn contains(&self, value: &Q) -> bool {
