@@ -1,3 +1,4 @@
+#[cfg(test)]
 pub fn unordered_elements_are<T, I>(i: I, v: Vec<T>) -> bool
 where
     T: Eq + Clone,
@@ -14,6 +15,7 @@ where
     v.is_empty()
 }
 
+#[cfg(test)]
 pub fn is_sorted<I>(i: I) -> bool
 where
     I: IntoIterator,
