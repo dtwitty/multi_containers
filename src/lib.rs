@@ -20,6 +20,7 @@ pub mod maps;
 
 /// Traits for working with sets.
 pub mod sets;
+mod test_utils;
 
 pub use crate::multimap::MultiMap;
 pub use crate::multimap_builder::MultiMapBuilder;

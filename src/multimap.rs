@@ -181,7 +181,7 @@ mod tests {
     macro_rules! base_test_suite {
         ($mod_name:ident, $map_maker:expr) => {
             mod $mod_name {
-                use super::unordered_elements_are;
+                use crate::test_utils::unordered_elements_are;
                 use crate::MultiMapBuilder;
 
                 #[test]
@@ -348,7 +348,7 @@ mod tests {
     macro_rules! sorted_keys_test_suite {
         ($mod_name:ident, $map_maker:expr) => {
             mod $mod_name {
-                use super::is_sorted;
+                use crate::test_utils::is_sorted;
                 use crate::MultiMapBuilder;
 
                 #[test]
@@ -397,7 +397,7 @@ mod tests {
     macro_rules! sorted_values_test_suite {
         ($map_name:ident, $map_maker:expr) => {
             mod $map_name {
-                use super::is_sorted;
+                use crate::test_utils::is_sorted;
                 use crate::MultiMapBuilder;
 
                 #[test]
@@ -413,39 +413,6 @@ mod tests {
                 }
             }
         };
-    }
-
-    fn unordered_elements_are<T, I>(i: I, v: Vec<T>) -> bool
-    where
-        T: Eq + Clone,
-        I: IntoIterator<Item = T>,
-    {
-        let mut v = v.clone();
-        for x in i {
-            if let Some(pos) = v.iter().position(|y| *y == x) {
-                v.remove(pos);
-            } else {
-                return false;
-            }
-        }
-        v.is_empty()
-    }
-
-    fn is_sorted<I>(i: I) -> bool
-    where
-        I: IntoIterator,
-        I::Item: Ord,
-    {
-        let mut i = i.into_iter();
-        if let Some(mut prev) = i.next() {
-            for next in i {
-                if prev > next {
-                    return false;
-                }
-                prev = next;
-            }
-        }
-        true
     }
 
     base_test_suite!(
