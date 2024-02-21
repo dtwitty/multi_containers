@@ -7,7 +7,7 @@ use std::hash::Hash;
 pub struct MultiMapBuilder {}
 
 impl MultiMapBuilder {
-    /// Configures the multi-map to use a hash set for the values.
+    /// Configures the multi-map to use a hashmap.
     pub fn hash_keys<K, S>() -> MultiMapBuilderWithKeys<impl Fn() -> HashMap<K, S>>
     where
         K: Hash + Eq,
@@ -15,7 +15,7 @@ impl MultiMapBuilder {
         Self::with_map_factory(HashMap::new)
     }
 
-    /// Configures the multi-map to use a sorted set for the values.
+    /// Configures the multi-map to use a sorted map.
     pub fn sorted_keys<K, S>() -> MultiMapBuilderWithKeys<impl Fn() -> BTreeMap<K, S>>
     where
         K: Ord,
@@ -23,9 +23,9 @@ impl MultiMapBuilder {
         Self::with_map_factory(BTreeMap::new)
     }
 
-    /// An advanced method for configuring the multi-map to use a custom value set factory.
-    /// This is useful if you want to use your own custom set type.
-    /// To do anything useful, your output type should implement the `Set` trait.
+    /// An advanced method for configuring the multi-map to use a custom map factory.
+    /// This is useful if you want to use your own custom map type.
+    /// To do anything useful, your output type should implement the `Map` trait.
     pub fn with_map_factory<F>(map_factory: F) -> MultiMapBuilderWithKeys<F> {
         MultiMapBuilderWithKeys { map_factory }
     }
@@ -40,7 +40,7 @@ impl<F, O> MultiMapBuilderWithKeys<F>
 where
     F: Fn() -> O,
 {
-    /// Configures the multi-map to use a hash map for the keys.
+    /// Configures the multi-map to use a hash set for values.
     pub fn hash_values<V>(self) -> MultiMapBuilderWithKeysAndVals<F, impl Fn() -> HashSet<V>>
     where
         V: Hash + Eq,
@@ -48,7 +48,7 @@ where
         self.with_value_set_factory(HashSet::new)
     }
 
-    /// Configures the multi-map to use a sorted map for the keys.
+    /// Configures the multi-map to use a sorted set for values.
     pub fn sorted_values<V>(self) -> MultiMapBuilderWithKeysAndVals<F, impl Fn() -> BTreeSet<V>>
     where
         V: Ord,
@@ -56,9 +56,9 @@ where
         self.with_value_set_factory(BTreeSet::new)
     }
 
-    /// An advanced method for configuring the multi-map to use a custom map factory.
-    /// This is useful if you want to use your own custom map type.
-    /// To do anything useful, your output type should implement the `Map` trait.
+    /// An advanced method for configuring the multi-map to use a custom value set factory.
+    /// This is useful if you want to use your own custom set type.
+    /// To do anything useful, your output type should implement the `Set` trait.
     pub fn with_value_set_factory<G>(
         self,
         value_set_factory: G,
