@@ -26,10 +26,15 @@ where
 {
     /// Inserts a value into the multi-set. Returns the previous count of the value.
     pub fn insert(&mut self, value: M::Key) -> usize {
-        let count = self.map.get_or_insert(value, || 0_usize);
-        let prev = *count;
-        *count += 1;
-        self.length += 1;
+        self.insert_some(value, 1)
+    }
+
+    /// Inserts a value into the multi-set `count` times. Returns the previous count of the value.
+    pub fn insert_some(&mut self, value: M::Key, count: usize) -> usize {
+        let have = self.map.get_or_insert(value, || 0_usize);
+        let prev = *have;
+        *have += count;
+        self.length += count;
         prev
     }
 
@@ -164,6 +169,16 @@ mod tests {
                     assert_eq!(set.insert(2), 0);
                     assert_eq!(set.insert(2), 1);
                     assert_eq!(set.insert(2), 2);
+                }
+
+                #[test]
+                fn insert_some() {
+                    let mut set = $map_maker;
+                    assert_eq!(set.insert_some(1, 2), 0);
+                    assert_eq!(set.insert_some(1, 2), 2);
+                    assert_eq!(set.insert_some(2, 3), 0);
+                    assert_eq!(set.insert_some(2, 3), 3);
+                    assert_eq!(set.insert_some(2, 3), 6);
                 }
 
                 #[test]
