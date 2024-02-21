@@ -180,7 +180,7 @@ mod tests {
         ($mod_name:ident, $map_maker:expr) => {
             mod $mod_name {
                 use super::unordered_elements_are;
-                use crate::builder::MultiMapBuilder;
+                use crate::MultiMapBuilder;
 
                 #[test]
                 fn test_insert() {
@@ -351,7 +351,7 @@ mod tests {
         ($mod_name:ident, $map_maker:expr) => {
             mod $mod_name {
                 use super::is_sorted;
-                use crate::builder::MultiMapBuilder;
+                use crate::MultiMapBuilder;
 
                 #[test]
                 fn test_keys_sorted() {
@@ -400,7 +400,7 @@ mod tests {
         ($map_name:ident, $map_maker:expr) => {
             mod $map_name {
                 use super::is_sorted;
-                use crate::builder::MultiMapBuilder;
+                use crate::MultiMapBuilder;
 
                 #[test]
                 fn test_each_set_sorted() {
