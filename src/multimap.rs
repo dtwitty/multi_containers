@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use std::ops::RangeBounds;
 
 /// A multi-map from keys to values.
-/// The primary semantics of a multi-map is that it can contain multiple values for a single key.
+/// The semantics of a multi-map is that it can contain multiple values for a single key.
 /// The multi-map is implemented as a managed map from keys to sets of values. For bookkeeping, the
 /// value sets are queryable, but not modifiable except through the multi-map API.
 #[derive(Default, Debug, PartialEq, Eq, Clone)]

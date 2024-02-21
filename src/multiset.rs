@@ -1,6 +1,9 @@
 use crate::maps::{Lookup, Map};
 use std::borrow::Borrow;
 
+/// A set that allows duplicate elements.
+/// The set is implemented as a map from elements to their counts. However, the API is designed to be more like a set,
+/// including the ability to iterate over duplicate elements multiple times.
 #[derive(Default, Debug, PartialEq, Eq, Clone)]
 pub struct MultiSet<M> {
     map: M,
