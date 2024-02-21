@@ -35,7 +35,7 @@ pub trait Map {
     fn insert(&mut self, key: Self::Key, value: Self::Val) -> Option<Self::Val>;
 
     /// Inserts a value into the map if it does not exist. Returns a mutable reference to (maybe new) value.
-    fn get_or_insert<F: FnOnce() -> Self::Val>(
+    fn get_or_insert<F: Fn() -> Self::Val>(
         &mut self,
         key: Self::Key,
         make_value: F,

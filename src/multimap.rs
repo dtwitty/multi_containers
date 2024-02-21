@@ -9,32 +9,36 @@ use std::ops::RangeBounds;
 /// The multi-map is implemented as a managed map from keys to sets of values. For bookkeeping, the
 /// value sets are queryable, but not modifiable except through the multi-map API.
 #[derive(Default, Debug, PartialEq, Eq, Clone)]
-pub struct MultiMap<M> {
-    data: M,
+pub struct MultiMap<M, F> {
+    map: M,
+    value_set_factory: F,
     length: usize,
 }
 
-impl<M> MultiMap<M>
-where
-    M: Default,
-{
-    /// Creates a new empty multi-map.
-    pub fn new() -> Self {
+impl<M, F> MultiMap<M, F> {
+    /// Creates a new multi-map with the given map and value set factory.
+    pub fn from_parts(map: M, value_set_factory: F) -> Self {
         MultiMap {
-            data: Default::default(),
+            map,
+            value_set_factory,
             length: 0,
         }
     }
 }
 
-impl<M> MultiMap<M>
+impl<M, F> MultiMap<M, F>
 where
     M: Map,
-    M::Val: Set + Default,
+    M::Val: Set,
+    F: Fn() -> M::Val,
 {
     /// Inserts a (key, value) mapping into the multi-map. Returns `true` if it was not already present.
     pub fn insert(&mut self, key: M::Key, value: <<M as Map>::Val as Set>::Elem) -> bool {
-        if self.data.get_or_insert(key, Default::default).insert(value) {
+        if self
+            .map
+            .get_or_insert(key, || (self.value_set_factory)())
+            .insert(value)
+        {
             self.length += 1;
             true
         } else {
@@ -52,7 +56,7 @@ where
         <<M as Map>::Val as Set>::Elem: Borrow<R>,
         R: ?Sized,
     {
-        self.data.get(key).map_or(false, |set| set.contains(value))
+        self.map.get(key).map_or(false, |set| set.contains(value))
     }
 
     /// Returns `true` if the multi-map contains any mapping with the given key.
@@ -62,7 +66,7 @@ where
         M::Key: Borrow<Q>,
         Q: ?Sized,
     {
-        self.data.contains_key(key)
+        self.map.contains_key(key)
     }
 
     /// Removes a (key, value) mapping from the multi-map. Returns `true` if it was present.
@@ -75,11 +79,11 @@ where
         <<M as Map>::Val as Set>::Elem: Borrow<R>,
         R: ?Sized,
     {
-        if let Some(set) = self.data.get_mut(key) {
+        if let Some(set) = self.map.get_mut(key) {
             if set.remove(value) {
                 self.length -= 1;
                 if set.is_empty() {
-                    self.data.remove(key);
+                    self.map.remove(key);
                 }
                 return true;
             }
@@ -94,7 +98,7 @@ where
         M::Key: Borrow<Q>,
         Q: ?Sized,
     {
-        self.data.remove(key)
+        self.map.remove(key)
     }
 
     /// Returns a reference to the set of values for the given key, if there are any.
@@ -104,22 +108,22 @@ where
         M::Key: Borrow<Q>,
         Q: ?Sized,
     {
-        self.data.get(key)
+        self.map.get(key)
     }
 
     /// Returns an iterator over the keys of the multi-map.
     pub fn keys(&self) -> M::KeyIter<'_> {
-        self.data.keys()
+        self.map.keys()
     }
 
     /// Returns an iterator over the values of the multi-map.
     pub fn values(&self) -> impl Iterator<Item = &<<M as Map>::Val as Set>::Elem> {
-        self.data.values().flat_map(|s| s.iter())
+        self.map.values().flat_map(|s| s.iter())
     }
 
     /// Returns an iterator over the keys and value sets in the multi-map.
     pub fn iter(&self) -> M::Iter<'_> {
-        self.data.iter()
+        self.map.iter()
     }
 
     /// Returns an iterator over the keys and values in the multi-map.
@@ -129,12 +133,12 @@ where
 
     /// Returns `true` if the multi-map is empty.
     pub fn is_empty(&self) -> bool {
-        self.data.is_empty()
+        self.map.is_empty()
     }
 
     /// Returns the number of keys in the multi-map.
     pub fn num_keys(&self) -> usize {
-        self.data.len()
+        self.map.len()
     }
 
     /// Returns the number of (key, value) mappings in the multi-map.
@@ -150,7 +154,7 @@ where
         Q: ?Sized,
         R: RangeBounds<Q>,
     {
-        self.data.range(range)
+        self.map.range(range)
     }
 
     /// Returns an iterator over the entries of the multi-map within a range of keys, with mutable references to the values.
@@ -164,7 +168,7 @@ where
         Q: ?Sized,
         R: RangeBounds<Q>,
     {
-        self.data
+        self.map
             .range(range)
             .flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
     }
@@ -395,8 +399,8 @@ mod tests {
     macro_rules! sorted_values_test_suite {
         ($map_name:ident, $map_maker:expr) => {
             mod $map_name {
-                use crate::builder::MultiMapBuilder;
                 use super::is_sorted;
+                use crate::builder::MultiMapBuilder;
 
                 #[test]
                 fn test_each_set_sorted() {
@@ -456,8 +460,8 @@ mod tests {
         MultiMapBuilder::hash_values().sorted_keys().build()
     );
 
-    sorted_values_test_suite!(
-        sorted_values_hash_keys_sorted_key_tests,
+    sorted_keys_test_suite!(
+        hash_values_sorted_keys_sorted_key_tests,
         MultiMapBuilder::hash_values().sorted_keys().build()
     );
 
