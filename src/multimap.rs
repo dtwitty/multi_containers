@@ -17,6 +17,8 @@ pub struct MultiMap<M, F> {
 
 impl<M, F> MultiMap<M, F> {
     /// Creates a new multi-map with the given map and value set factory.
+    /// This is an advanced method. If you don't have a good reason to use it, you probably want to use
+    /// `MultiMapBuilder` instead.
     pub fn from_parts(map: M, value_set_factory: F) -> Self {
         MultiMap {
             map,

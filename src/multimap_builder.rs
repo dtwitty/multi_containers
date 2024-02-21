@@ -25,7 +25,8 @@ impl MultiMapBuilder {
 
     /// An advanced method for configuring the multi-map to use a custom map factory.
     /// This is useful if you want to use your own custom map type.
-    /// To do anything useful, your output type should implement the `Map` trait.
+    /// To do anything useful, your output type should implement the `Map` trait, and the value type should implement the `Set` trait.
+    /// For correctness, the output of `map_factory` should be an empty map.
     pub fn with_map_factory<F>(map_factory: F) -> MultiMapBuilderWithKeys<F> {
         MultiMapBuilderWithKeys { map_factory }
     }
@@ -81,7 +82,7 @@ where
     F: Fn() -> M,
     G: Fn() -> S,
 {
-    /// Builds a multi-map. This is the only usable method on this struct.
+    /// Builds a multi-map.
     pub fn build(self) -> MultiMap<M, G> {
         let map = (self.map_factory)();
         MultiMap::from_parts(map, self.value_set_factory)
