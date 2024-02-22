@@ -153,17 +153,71 @@ where
     }
 }
 
+impl<M> IntoIterator for MultiSet<M>
+where
+    M: Map<Val = usize> + IntoIterator<Item = (M::Key, usize)>,
+    M::Key: Clone,
+{
+    type Item = M::Key;
+    type IntoIter = impl Iterator<Item = M::Key>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.map
+            .into_iter()
+            .flat_map(|(k, v)| std::iter::repeat(k).take(v))
+    }
+}
+
+impl<'a, M> IntoIterator for &'a MultiSet<M>
+where
+    M: Map<Val = usize>,
+{
+    type Item = &'a M::Key;
+    type IntoIter = impl Iterator<Item = &'a M::Key>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<T, M> FromIterator<T> for MultiSet<M>
+where
+    M: Map<Key = T, Val = usize> + Default,
+{
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = T>,
+    {
+        let mut set = MultiSet::default();
+        for value in iter {
+            set.insert(value);
+        }
+        set
+    }
+}
+
+impl<M, const N: usize> From<[M::Key; N]> for MultiSet<M>
+where
+    M: Map<Val = usize> + Default,
+    M::Key: Clone,
+{
+    fn from(array: [M::Key; N]) -> Self {
+        array.into_iter().collect::<Self>()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     macro_rules! base_test_suite {
-        ($mod_name:ident, $map_maker:expr) => {
+        ($mod_name:ident, $set_maker:expr) => {
             mod $mod_name {
                 use crate::test_utils::unordered_elements_are;
                 use crate::MultiSetBuilder;
+                use crate::MultiSet;
 
                 #[test]
                 fn insert() {
-                    let mut set = $map_maker;
+                    let mut set = $set_maker;
                     assert_eq!(set.insert(1), 0);
                     assert_eq!(set.insert(1), 1);
                     assert_eq!(set.insert(2), 0);
@@ -173,7 +227,7 @@ mod tests {
 
                 #[test]
                 fn insert_some() {
-                    let mut set = $map_maker;
+                    let mut set = $set_maker;
                     assert_eq!(set.insert_some(1, 2), 0);
                     assert_eq!(set.insert_some(1, 2), 2);
                     assert_eq!(set.insert_some(2, 3), 0);
@@ -183,12 +237,9 @@ mod tests {
 
                 #[test]
                 fn remove() {
-                    let mut set = $map_maker;
-                    set.insert(1);
-                    set.insert(1);
-                    set.insert(2);
-                    set.insert(2);
-                    set.insert(2);
+                    let mut set = $set_maker;
+                    set.insert_some(1, 2);
+                    set.insert_some(2, 3);
                     assert_eq!(set.remove(&1), 2);
                     assert_eq!(set.remove(&1), 1);
                     assert_eq!(set.remove(&1), 0);
@@ -199,12 +250,9 @@ mod tests {
 
                 #[test]
                 fn remove_at_most() {
-                    let mut set = $map_maker;
-                    set.insert(1);
-                    set.insert(1);
-                    set.insert(2);
-                    set.insert(2);
-                    set.insert(2);
+                    let mut set = $set_maker;
+                    set.insert_some(1, 2);
+                    set.insert_some(2, 3);
                     assert_eq!(set.remove_at_most(&1, 1), 2);
                     assert_eq!(set.remove_at_most(&1, 1), 1);
                     assert_eq!(set.remove_at_most(&2, 2), 3);
@@ -214,12 +262,9 @@ mod tests {
 
                 #[test]
                 fn remove_all() {
-                    let mut set = $map_maker;
-                    set.insert(1);
-                    set.insert(1);
-                    set.insert(2);
-                    set.insert(2);
-                    set.insert(2);
+                    let mut set = $set_maker;
+                    set.insert_some(1, 2);
+                    set.insert_some(2, 3);
                     assert_eq!(set.remove_all(&1), 2);
                     assert_eq!(set.remove_all(&1), 0);
                     assert_eq!(set.remove_all(&2), 3);
@@ -228,12 +273,9 @@ mod tests {
 
                 #[test]
                 fn contains() {
-                    let mut set = $map_maker;
-                    set.insert(1);
-                    set.insert(1);
-                    set.insert(2);
-                    set.insert(2);
-                    set.insert(2);
+                    let mut set = $set_maker;
+                    set.insert_some(1, 2);
+                    set.insert_some(2, 3);
                     assert!(set.contains(&1));
                     assert!(set.contains(&2));
                     assert!(!set.contains(&3));
@@ -241,12 +283,9 @@ mod tests {
 
                 #[test]
                 fn count() {
-                    let mut set = $map_maker;
-                    set.insert(1);
-                    set.insert(1);
-                    set.insert(2);
-                    set.insert(2);
-                    set.insert(2);
+                    let mut set = $set_maker;
+                    set.insert_some(1, 2);
+                    set.insert_some(2, 3);
                     assert_eq!(set.count(&1), 2);
                     assert_eq!(set.count(&2), 3);
                     assert_eq!(set.count(&3), 0);
@@ -254,7 +293,7 @@ mod tests {
 
                 #[test]
                 fn is_empty() {
-                    let mut set = $map_maker;
+                    let mut set = $set_maker;
                     assert!(set.is_empty());
                     set.insert(1);
                     assert!(!set.is_empty());
@@ -264,7 +303,7 @@ mod tests {
 
                 #[test]
                 fn len() {
-                    let mut set = $map_maker;
+                    let mut set = $set_maker;
                     assert_eq!(set.len(), 0);
                     set.insert(1);
                     assert_eq!(set.len(), 1);
@@ -276,12 +315,9 @@ mod tests {
 
                 #[test]
                 fn iter() {
-                    let mut set = $map_maker;
-                    set.insert(1);
-                    set.insert(1);
-                    set.insert(2);
-                    set.insert(2);
-                    set.insert(2);
+                    let mut set = $set_maker;
+                    set.insert_some(1, 2);
+                    set.insert_some(2, 3);
                     assert!(unordered_elements_are(
                         set.iter().cloned(),
                         vec![1, 1, 2, 2, 2]
@@ -290,35 +326,57 @@ mod tests {
 
                 #[test]
                 fn iter_counts() {
-                    let mut set = $map_maker;
-                    set.insert(1);
-                    set.insert(1);
-                    set.insert(2);
-                    set.insert(2);
-                    set.insert(2);
+                    let mut set = $set_maker;
+                    set.insert_some(1, 2);
+                    set.insert_some(2, 3);
                     assert!(unordered_elements_are(
                         set.iter_counts().map(|(k, v)| (k.clone(), v.clone())),
                         vec![(1, 2), (2, 3)]
                     ));
+                }
+
+                #[test]
+                fn into_iter() {
+                    let mut set = $set_maker;
+                    set.insert_some(1, 2);
+                    set.insert_some(2, 3);
+                    assert!(unordered_elements_are(set.into_iter(), vec![1, 1, 2, 2, 2]));
+                }
+
+                #[test]
+                fn from_iter() {
+                    let mut set = $set_maker;
+                    set.insert_some(1, 2);  // This line does nothing, but makes clippy happy.
+                    // Because we are in a macro, we don't actually know the type of the set.
+                    // So, we let the compiler infer it using the mut variable.
+                    set = vec![1, 1, 2, 2, 2].into_iter().collect::<MultiSet<_>>();
+                    assert!(unordered_elements_are(set.iter().cloned(), vec![1, 1, 2, 2, 2]));
+                }
+
+                #[test]
+                fn from_array() {
+                    let mut set = $set_maker;
+                    set.insert_some(1, 2);  // This line does nothing, but makes clippy happy.
+                    // Because we are in a macro, we don't actually know the type of the set.
+                    // So, we let the compiler infer it using the mut variable.
+                    set = MultiSet::from([1, 1, 2, 2, 2]);
+                    assert!(unordered_elements_are(set.iter().cloned(), vec![1, 1, 2, 2, 2]));
                 }
             }
         };
     }
 
     macro_rules! sorted_test_suite {
-        ($mod_name:ident, $map_maker:expr) => {
+        ($mod_name:ident, $set_maker:expr) => {
             mod $mod_name {
                 use crate::test_utils::is_sorted;
                 use crate::MultiSetBuilder;
 
                 #[test]
                 fn range() {
-                    let mut set = $map_maker;
-                    set.insert(1);
-                    set.insert(1);
-                    set.insert(2);
-                    set.insert(2);
-                    set.insert(2);
+                    let mut set = $set_maker;
+                    set.insert_some(1, 2);
+                    set.insert_some(2, 3);
                     assert!(is_sorted(set.range(..).cloned()));
                     assert!(is_sorted(set.range(1..).cloned()));
                     assert!(is_sorted(set.range(..2).cloned()));
@@ -327,12 +385,9 @@ mod tests {
 
                 #[test]
                 fn range_counts() {
-                    let mut set = $map_maker;
-                    set.insert(1);
-                    set.insert(1);
-                    set.insert(2);
-                    set.insert(2);
-                    set.insert(2);
+                    let mut set = $set_maker;
+                    set.insert_some(1, 2);
+                    set.insert_some(2, 3);
                     assert!(is_sorted(
                         set.range_counts(..).map(|(k, v)| (k.clone(), v.clone()))
                     ));
