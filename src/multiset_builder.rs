@@ -23,6 +23,7 @@ impl MultiSetBuilder {
         Self::with_map_type()
     }
 
+    /// An advanced method that allows you to specify the type of map to use for keys.
     pub fn with_map_type<M>() -> MultiSetBuilderWithVals<M> {
         MultiSetBuilderWithVals {
             _m: std::marker::PhantomData,

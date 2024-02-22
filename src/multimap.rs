@@ -18,6 +18,7 @@ impl<M> MultiMap<M>
 where
     M: Default,
 {
+    /// Creates a new, empty multi-map.
     pub fn new() -> Self {
         MultiMap {
             map: Default::default(),
@@ -169,35 +170,6 @@ where
         self.map
             .range(range)
             .flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
-    }
-}
-
-impl<M> IntoIterator for MultiMap<M>
-where
-    M: Map + IntoIterator<Item = (M::Key, M::Val)>,
-    M::Key: Clone,
-    M::Val: Set + IntoIterator<Item = <<M as Map>::Val as Set>::Elem>,
-{
-    type Item = (M::Key, <<M as Map>::Val as Set>::Elem);
-    type IntoIter = impl Iterator<Item = Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.map
-            .into_iter()
-            .flat_map(|(k, s)| s.into_iter().map(move |v| (k.clone(), v)))
-    }
-}
-
-impl<'a, M> IntoIterator for &'a MultiMap<M>
-where
-    M: Map,
-    M::Val: Set,
-{
-    type Item = (&'a M::Key, &'a M::Val);
-    type IntoIter = impl Iterator<Item = Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.iter()
     }
 }
 

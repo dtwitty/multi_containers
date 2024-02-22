@@ -15,6 +15,7 @@ impl<M> MultiSet<M>
 where
     M: Default,
 {
+    /// Creates a new empty multi-set.
     pub fn new() -> Self {
         MultiSet {
             map: M::default(),
@@ -153,33 +154,6 @@ where
         R: RangeBounds<Q>,
     {
         self.map.range(range)
-    }
-}
-
-impl<M> IntoIterator for MultiSet<M>
-where
-    M: Map<Val = usize> + IntoIterator<Item = (M::Key, usize)>,
-    M::Key: Clone,
-{
-    type Item = M::Key;
-    type IntoIter = impl Iterator<Item = M::Key>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.map
-            .into_iter()
-            .flat_map(|(k, v)| std::iter::repeat(k).take(v))
-    }
-}
-
-impl<'a, M> IntoIterator for &'a MultiSet<M>
-where
-    M: Map<Val = usize>,
-{
-    type Item = &'a M::Key;
-    type IntoIter = impl Iterator<Item = &'a M::Key>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.iter()
     }
 }
 
@@ -336,14 +310,6 @@ mod tests {
                         set.iter_counts().map(|(k, v)| (k.clone(), v.clone())),
                         vec![(1, 2), (2, 3)]
                     ));
-                }
-
-                #[test]
-                fn into_iter() {
-                    let mut set = $set_maker;
-                    set.insert_some(1, 2);
-                    set.insert_some(2, 3);
-                    assert!(unordered_elements_are(set.into_iter(), vec![1, 1, 2, 2, 2]));
                 }
 
                 #[test]

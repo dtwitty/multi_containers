@@ -25,6 +25,7 @@ impl MultiMapBuilder {
         Self::with_map_type()
     }
 
+    /// An advanced method that allows you to specify the type of map to use for keys.
     pub fn with_map_type<M>() -> MultiMapBuilderWithKeys<M>
     where
         M: Map,
@@ -65,6 +66,7 @@ where
         self.with_set_type()
     }
 
+    /// An advanced method that allows you to specify the type of set to use for values.
     pub fn with_set_type(self) -> MultiMapBuilderWithKeysAndVals<M>
     where
         M: Map,
