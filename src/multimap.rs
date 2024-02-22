@@ -172,6 +172,61 @@ where
     }
 }
 
+impl<M> IntoIterator for MultiMap<M>
+where
+    M: Map + IntoIterator<Item = (M::Key, M::Val)>,
+    M::Key: Clone,
+    M::Val: Set + IntoIterator<Item = <<M as Map>::Val as Set>::Elem>,
+{
+    type Item = (M::Key, <<M as Map>::Val as Set>::Elem);
+    type IntoIter = impl Iterator<Item = Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.map
+            .into_iter()
+            .flat_map(|(k, s)| s.into_iter().map(move |v| (k.clone(), v)))
+    }
+}
+
+impl<'a, M> IntoIterator for &'a MultiMap<M>
+where
+    M: Map,
+    M::Val: Set,
+{
+    type Item = (&'a M::Key, &'a M::Val);
+    type IntoIter = impl Iterator<Item = Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<T, M> FromIterator<T> for MultiMap<M>
+where
+    M: Map + Default,
+    M::Val: Set + Default,
+    T: Into<(M::Key, <<M as Map>::Val as Set>::Elem)>,
+{
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let mut map = MultiMap::new();
+        for t in iter {
+            let (k, v) = t.into();
+            map.insert(k, v);
+        }
+        map
+    }
+}
+
+impl<M, const N: usize> From<[(M::Key, <<M as Map>::Val as Set>::Elem); N]> for MultiMap<M>
+where
+    M: Map + Default,
+    M::Val: Set + Default,
+{
+    fn from(arr: [(M::Key, <<M as Map>::Val as Set>::Elem); N]) -> Self {
+        arr.into_iter().collect()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     macro_rules! base_test_suite {
