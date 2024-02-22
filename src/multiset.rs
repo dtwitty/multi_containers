@@ -11,12 +11,15 @@ pub struct MultiSet<M> {
     length: usize,
 }
 
-impl<M> MultiSet<M> {
-    /// Creates a new multi-map with the given map and value set factory.
-    /// This is an advanced method. If you don't have a good reason to use it, you probably want to use
-    /// `MultiSetBuilder` instead.
-    pub fn from_parts(map: M) -> Self {
-        MultiSet { map, length: 0 }
+impl<M> MultiSet<M>
+where
+    M: Default,
+{
+    pub fn new() -> Self {
+        MultiSet {
+            map: M::default(),
+            length: 0,
+        }
     }
 }
 
@@ -212,8 +215,8 @@ mod tests {
         ($mod_name:ident, $set_maker:expr) => {
             mod $mod_name {
                 use crate::test_utils::unordered_elements_are;
-                use crate::MultiSetBuilder;
                 use crate::MultiSet;
+                use crate::MultiSetBuilder;
 
                 #[test]
                 fn insert() {
@@ -346,21 +349,27 @@ mod tests {
                 #[test]
                 fn from_iter() {
                     let mut set = $set_maker;
-                    set.insert_some(1, 2);  // This line does nothing, but makes clippy happy.
-                    // Because we are in a macro, we don't actually know the type of the set.
-                    // So, we let the compiler infer it using the mut variable.
+                    set.insert_some(1, 2); // This line does nothing, but makes clippy happy.
+                                           // Because we are in a macro, we don't actually know the type of the set.
+                                           // So, we let the compiler infer it using the mut variable.
                     set = vec![1, 1, 2, 2, 2].into_iter().collect::<MultiSet<_>>();
-                    assert!(unordered_elements_are(set.iter().cloned(), vec![1, 1, 2, 2, 2]));
+                    assert!(unordered_elements_are(
+                        set.iter().cloned(),
+                        vec![1, 1, 2, 2, 2]
+                    ));
                 }
 
                 #[test]
                 fn from_array() {
                     let mut set = $set_maker;
-                    set.insert_some(1, 2);  // This line does nothing, but makes clippy happy.
-                    // Because we are in a macro, we don't actually know the type of the set.
-                    // So, we let the compiler infer it using the mut variable.
+                    set.insert_some(1, 2); // This line does nothing, but makes clippy happy.
+                                           // Because we are in a macro, we don't actually know the type of the set.
+                                           // So, we let the compiler infer it using the mut variable.
                     set = MultiSet::from([1, 1, 2, 2, 2]);
-                    assert!(unordered_elements_are(set.iter().cloned(), vec![1, 1, 2, 2, 2]));
+                    assert!(unordered_elements_are(
+                        set.iter().cloned(),
+                        vec![1, 1, 2, 2, 2]
+                    ));
                 }
             }
         };

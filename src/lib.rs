@@ -21,10 +21,16 @@ pub mod maps;
 /// Traits for working with sets.
 pub mod sets;
 
-mod test_utils;
 mod examples;
+mod test_utils;
 
 pub use crate::multimap::MultiMap;
 pub use crate::multimap_builder::MultiMapBuilder;
 pub use crate::multiset::MultiSet;
 pub use crate::multiset_builder::MultiSetBuilder;
+use std::collections::{HashMap, HashSet};
+
+pub type HashMultiMap<K, V, S> = MultiMap<HashMap<K, HashSet<V, S>, S>>;
+pub type HashMultiSet<K, S> = MultiSet<HashMap<K, usize, S>>;
+pub type BTreeMultiMap<K, V> = MultiMap<HashMap<K, HashSet<V>>>;
+pub type BTreeMultiSet<K> = MultiSet<HashMap<K, usize>>;

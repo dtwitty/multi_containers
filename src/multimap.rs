@@ -9,38 +9,34 @@ use std::ops::RangeBounds;
 /// The multi-map is implemented as a managed map from keys to sets of values. For bookkeeping, the
 /// value sets are queryable, but not modifiable except through the multi-map API.
 #[derive(Default, Debug, PartialEq, Eq, Clone)]
-pub struct MultiMap<M, F> {
+pub struct MultiMap<M> {
     map: M,
-    value_set_factory: F,
     length: usize,
 }
 
-impl<M, F> MultiMap<M, F> {
-    /// Creates a new multi-map with the given map and value set factory.
-    /// This is an advanced method. If you don't have a good reason to use it, you probably want to use
-    /// `MultiMapBuilder` instead.
-    pub fn from_parts(map: M, value_set_factory: F) -> Self {
+impl<M> MultiMap<M>
+where
+    M: Default,
+{
+    pub fn new() -> Self {
         MultiMap {
-            map,
-            value_set_factory,
+            map: Default::default(),
             length: 0,
         }
     }
 }
 
-impl<M, F> MultiMap<M, F>
+impl<M> MultiMap<M>
 where
     M: Map,
     M::Val: Set,
-    F: Fn() -> M::Val,
 {
     /// Inserts a (key, value) mapping into the multi-map. Returns `true` if it was not already present.
-    pub fn insert(&mut self, key: M::Key, value: <<M as Map>::Val as Set>::Elem) -> bool {
-        if self
-            .map
-            .get_or_insert(key, || (self.value_set_factory)())
-            .insert(value)
-        {
+    pub fn insert(&mut self, key: M::Key, value: <<M as Map>::Val as Set>::Elem) -> bool
+    where
+        M::Val: Default,
+    {
+        if self.map.get_or_insert(key, Default::default).insert(value) {
             self.length += 1;
             true
         } else {

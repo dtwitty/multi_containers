@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::{MultiMapBuilder, MultiSetBuilder};
+    use crate::{HashMultiSet, MultiMapBuilder};
     #[test]
     fn library() {
         let mut map = MultiMapBuilder::hash_keys().hash_values().build();
@@ -63,12 +63,9 @@ mod tests {
 
     #[test]
     fn counter() {
-        let mut set = MultiSetBuilder::sorted_values().build();
-        "the quick brown fox jumps over the lazy dog"
+        let set = "the quick brown fox jumps over the lazy dog"
             .chars()
-            .for_each(|c| {
-                set.insert(c);
-            });
+            .collect::<HashMultiSet<_, _>>();
 
         assert_eq!(set.len(), 43);
         assert_eq!(set.count(&'e'), 3);

@@ -1,3 +1,5 @@
+use crate::maps::Map;
+use crate::sets::Set;
 use crate::MultiMap;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::hash::Hash;
@@ -8,83 +10,83 @@ pub struct MultiMapBuilder {}
 
 impl MultiMapBuilder {
     /// Configures the multi-map to use a hashmap.
-    pub fn hash_keys<K, S>() -> MultiMapBuilderWithKeys<impl Fn() -> HashMap<K, S>>
+    pub fn hash_keys<K, S>() -> MultiMapBuilderWithKeys<HashMap<K, S>>
     where
         K: Hash + Eq,
     {
-        Self::with_map_factory(HashMap::new)
+        Self::with_map_type()
     }
 
     /// Configures the multi-map to use a sorted map.
-    pub fn sorted_keys<K, S>() -> MultiMapBuilderWithKeys<impl Fn() -> BTreeMap<K, S>>
+    pub fn sorted_keys<K, S>() -> MultiMapBuilderWithKeys<BTreeMap<K, S>>
     where
         K: Ord,
     {
-        Self::with_map_factory(BTreeMap::new)
+        Self::with_map_type()
     }
 
-    /// An advanced method for configuring the multi-map to use a custom map factory.
-    /// This is useful if you want to use your own custom map type.
-    /// To do anything useful, your output type should implement the `Map` trait, and the value type should implement the `Set` trait.
-    /// For correctness, the output of `map_factory` should be an empty map.
-    pub fn with_map_factory<F>(map_factory: F) -> MultiMapBuilderWithKeys<F> {
-        MultiMapBuilderWithKeys { map_factory }
+    pub fn with_map_type<M>() -> MultiMapBuilderWithKeys<M>
+    where
+        M: Map,
+    {
+        MultiMapBuilderWithKeys {
+            _m: std::marker::PhantomData,
+        }
     }
 }
 
 /// A builder for a multi-map that has a known type for the map.
-pub struct MultiMapBuilderWithKeys<F> {
-    map_factory: F,
+pub struct MultiMapBuilderWithKeys<M>
+where
+    M: Map,
+{
+    _m: std::marker::PhantomData<M>,
 }
 
-impl<F, O> MultiMapBuilderWithKeys<F>
+impl<M> MultiMapBuilderWithKeys<M>
 where
-    F: Fn() -> O,
+    M: Map,
 {
     /// Configures the multi-map to use a hash set for values.
-    pub fn hash_values<V>(self) -> MultiMapBuilderWithKeysAndVals<F, impl Fn() -> HashSet<V>>
+    pub fn hash_values<V>(self) -> MultiMapBuilderWithKeysAndVals<M>
     where
+        M: Map<Val = HashSet<V>>,
         V: Hash + Eq,
     {
-        self.with_value_set_factory(HashSet::new)
+        self.with_set_type()
     }
 
     /// Configures the multi-map to use a sorted set for values.
-    pub fn sorted_values<V>(self) -> MultiMapBuilderWithKeysAndVals<F, impl Fn() -> BTreeSet<V>>
+    pub fn sorted_values<V>(self) -> MultiMapBuilderWithKeysAndVals<M>
     where
+        M: Map<Val = BTreeSet<V>>,
         V: Ord,
     {
-        self.with_value_set_factory(BTreeSet::new)
+        self.with_set_type()
     }
 
-    /// An advanced method for configuring the multi-map to use a custom value set factory.
-    /// This is useful if you want to use your own custom set type.
-    /// To do anything useful, your output type should implement the `Set` trait.
-    pub fn with_value_set_factory<G>(
-        self,
-        value_set_factory: G,
-    ) -> MultiMapBuilderWithKeysAndVals<F, G> {
+    pub fn with_set_type(self) -> MultiMapBuilderWithKeysAndVals<M>
+    where
+        M: Map,
+        M::Val: Set,
+    {
         MultiMapBuilderWithKeysAndVals {
-            map_factory: self.map_factory,
-            value_set_factory,
+            _m: std::marker::PhantomData,
         }
     }
 }
 
 /// A builder for a multi-map that has a known type for keys and values.
-pub struct MultiMapBuilderWithKeysAndVals<F, G> {
-    map_factory: F,
-    value_set_factory: G,
+pub struct MultiMapBuilderWithKeysAndVals<M> {
+    _m: std::marker::PhantomData<M>,
 }
 
-impl<M, S, F, G> MultiMapBuilderWithKeysAndVals<F, G>
+impl<M> MultiMapBuilderWithKeysAndVals<M>
 where
-    F: Fn() -> M,
-    G: Fn() -> S,
+    M: Default,
 {
     /// Builds a multi-map.
-    pub fn build(self) -> MultiMap<M, G> {
-        let map = (self.map_factory)();
-        MultiMap::from_parts(map, self.value_set_factory)
+    pub fn build(self) -> MultiMap<M> {
+        Default::default()
     }
 }
