@@ -25,8 +25,8 @@
 //! map.insert("a".to_string(), 1);
 //! map.insert("a".to_string(), 2);
 //! map.insert("b".to_string(), 3);
-//! assert_eq!(map.get("a").len(), 2);
-//! assert_eq!(map.get("b").len(), 1);
+//! assert_eq!(map.get("a").unwrap().len(), 2);
+//! assert_eq!(map.get("b").unwrap().len(), 1);
 //! ```
 //!
 //! ### MultiSet

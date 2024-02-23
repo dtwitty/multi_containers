@@ -1,0 +1,384 @@
+Index: src/sets.rs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>use std::borrow::Borrow;\nuse std::collections::{btree_set, BTreeSet, hash_set, HashSet};\nuse std::hash::Hash;\n\n/// A set of elements.\npub trait Set {\n    /// The type of elements in the set.\n    type Elem;\n\n    /// The type of iterator over the elements of the set.\n    type Iter<'a>: Iterator<Item=&'a Self::Elem> where Self: 'a;\n\n    /// Inserts a value into the set. Returns `true` if the value was not already present.\n    fn insert(&mut self, value: Self::Elem) -> bool;\n\n    /// Returns `true` if the set is empty.\n    fn is_empty(&self) -> bool;\n\n    /// Returns the number of elements in the set.\n    fn len(&self) -> usize;\n\n    /// Returns an iterator over the elements of the set.\n    fn iter(&self) -> Self::Iter<'_>;\n}\n\npub trait Container<Q>: Set where Q: ?Sized, Self::Elem: Borrow<Q> {\n    /// Removes a value from the set. Returns `true` if the value was present.\n    fn remove(&mut self, value: &Q) -> bool;\n\n    /// Returns `true` if the set contains the given value.\n    fn contains(&self, value: &Q) -> bool;\n}\n\nimpl<T: Hash + Eq> Set for HashSet<T> {\n    type Elem = T;\n\n    type Iter<'a> = hash_set::Iter<'a, T> where T: 'a;\n\n    fn insert(&mut self, value: Self::Elem) -> bool {\n        self.insert(value)\n    }\n\n    fn is_empty(&self) -> bool {\n        self.is_empty()\n    }\n\n    fn len(&self) -> usize {\n        self.len()\n    }\n\n    fn iter(&self) -> Self::Iter<'_> {\n        self.iter()\n    }\n}\n\nimpl<T, Q> Container<Q> for HashSet<T> where Q: Hash + Eq + ?Sized, T: Hash + Eq + Borrow<Q> {\n    fn remove(&mut self, value: &Q) -> bool {\n        self.remove(value)\n    }\n\n    fn contains(&self, value: &Q) -> bool {\n        self.contains(value)\n    }\n}\n\nimpl<T: Ord> Set for BTreeSet<T> {\n    type Elem = T;\n    type Iter<'a> = btree_set::Iter<'a, T> where T: 'a;\n\n    fn insert(&mut self, value: Self::Elem) -> bool {\n        self.insert(value)\n    }\n\n    fn is_empty(&self) -> bool {\n        self.is_empty()\n    }\n\n    fn len(&self) -> usize {\n        self.len()\n    }\n\n    fn iter(&self) -> Self::Iter<'_> {\n        self.iter()\n    }\n}\n\nimpl<T, Q> Container<Q> for BTreeSet<T> where Q: Ord + ?Sized, T: Ord + Borrow<Q> {\n    fn remove(&mut self, value: &Q) -> bool {\n        self.remove(value)\n    }\n\n    fn contains(&self, value: &Q) -> bool {\n        self.contains(value)\n    }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/sets.rs b/src/sets.rs
+--- a/src/sets.rs	(revision a473ac115c3a397e8b50b1bb28422b26bca70cdf)
++++ b/src/sets.rs	(date 1708448697411)
+@@ -1,5 +1,5 @@
+ use std::borrow::Borrow;
+-use std::collections::{btree_set, BTreeSet, hash_set, HashSet};
++use std::collections::{btree_set, hash_set, BTreeSet, HashSet};
+ use std::hash::Hash;
+ 
+ /// A set of elements.
+@@ -8,7 +8,9 @@
+     type Elem;
+ 
+     /// The type of iterator over the elements of the set.
+-    type Iter<'a>: Iterator<Item=&'a Self::Elem> where Self: 'a;
++    type Iter<'a>: Iterator<Item = &'a Self::Elem>
++    where
++        Self: 'a;
+ 
+     /// Inserts a value into the set. Returns `true` if the value was not already present.
+     fn insert(&mut self, value: Self::Elem) -> bool;
+@@ -23,7 +25,11 @@
+     fn iter(&self) -> Self::Iter<'_>;
+ }
+ 
+-pub trait Container<Q>: Set where Q: ?Sized, Self::Elem: Borrow<Q> {
++pub trait Container<Q>: Set
++where
++    Q: ?Sized,
++    Self::Elem: Borrow<Q>,
++{
+     /// Removes a value from the set. Returns `true` if the value was present.
+     fn remove(&mut self, value: &Q) -> bool;
+ 
+@@ -31,7 +37,10 @@
+     fn contains(&self, value: &Q) -> bool;
+ }
+ 
+-impl<T: Hash + Eq> Set for HashSet<T> {
++impl<T> Set for HashSet<T>
++where
++    T: Hash + Eq,
++{
+     type Elem = T;
+ 
+     type Iter<'a> = hash_set::Iter<'a, T> where T: 'a;
+@@ -53,7 +62,11 @@
+     }
+ }
+ 
+-impl<T, Q> Container<Q> for HashSet<T> where Q: Hash + Eq + ?Sized, T: Hash + Eq + Borrow<Q> {
++impl<T, Q> Container<Q> for HashSet<T>
++where
++    Q: Hash + Eq + ?Sized,
++    T: Hash + Eq + Borrow<Q>,
++{
+     fn remove(&mut self, value: &Q) -> bool {
+         self.remove(value)
+     }
+@@ -63,7 +76,10 @@
+     }
+ }
+ 
+-impl<T: Ord> Set for BTreeSet<T> {
++impl<T> Set for BTreeSet<T>
++where
++    T: Ord,
++{
+     type Elem = T;
+     type Iter<'a> = btree_set::Iter<'a, T> where T: 'a;
+ 
+@@ -84,7 +100,11 @@
+     }
+ }
+ 
+-impl<T, Q> Container<Q> for BTreeSet<T> where Q: Ord + ?Sized, T: Ord + Borrow<Q> {
++impl<T, Q> Container<Q> for BTreeSet<T>
++where
++    Q: Ord + ?Sized,
++    T: Ord + Borrow<Q>,
++{
+     fn remove(&mut self, value: &Q) -> bool {
+         self.remove(value)
+     }
+Index: src/builder.rs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};\nuse std::hash::Hash;\nuse crate::maps::Map;\nuse crate::MultiMap;\n\n\npub struct MultiMapBuilder {}\n\nimpl MultiMapBuilder {\n    pub fn new() -> Self {\n        MultiMapBuilder {}\n    }\n\n    pub fn hash_values<V: Hash + Eq>(self) -> MultiMapBuilderWithVals<HashSet<V>> {\n        MultiMapBuilderWithVals::new()\n    }\n\n    pub fn sorted_values<V: Ord>(self) -> MultiMapBuilderWithVals<BTreeSet<V>> {\n        MultiMapBuilderWithVals::new()\n    }\n}\n\npub struct MultiMapBuilderWithVals<S> {\n    _s: std::marker::PhantomData<S>,\n}\n\nimpl<S> MultiMapBuilderWithVals<S> {\n    pub fn new() -> Self {\n        MultiMapBuilderWithVals {\n            _s: std::marker::PhantomData,\n        }\n    }\n\n    pub fn hash_keys<K: Hash + Eq>(self) -> MultiMapBuilderWithKeysAndVals<HashMap<K, S>> {\n        MultiMapBuilderWithKeysAndVals::new()\n    }\n\n    pub fn sorted_keys<K: Ord + Eq>(self) -> MultiMapBuilderWithKeysAndVals<BTreeMap<K, S>> {\n        MultiMapBuilderWithKeysAndVals::new()\n    }\n}\n\npub struct MultiMapBuilderWithKeysAndVals<M> {\n    _m: std::marker::PhantomData<M>,\n}\n\nimpl<M: Map + Default> MultiMapBuilderWithKeysAndVals<M> {\n    pub fn new() -> Self {\n        MultiMapBuilderWithKeysAndVals {\n            _m: std::marker::PhantomData,\n        }\n    }\n\n    pub fn build(self) -> MultiMap<M> {\n        MultiMap::new()\n    }\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/builder.rs b/src/builder.rs
+--- a/src/builder.rs	(revision a473ac115c3a397e8b50b1bb28422b26bca70cdf)
++++ b/src/builder.rs	(date 1708448697377)
+@@ -1,8 +1,7 @@
+-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+-use std::hash::Hash;
+ use crate::maps::Map;
+ use crate::MultiMap;
+-
++use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
++use std::hash::Hash;
+ 
+ pub struct MultiMapBuilder {}
+ 
+@@ -11,11 +10,17 @@
+         MultiMapBuilder {}
+     }
+ 
+-    pub fn hash_values<V: Hash + Eq>(self) -> MultiMapBuilderWithVals<HashSet<V>> {
++    pub fn hash_values<V>(self) -> MultiMapBuilderWithVals<HashSet<V>>
++    where
++        V: Hash + Eq,
++    {
+         MultiMapBuilderWithVals::new()
+     }
+ 
+-    pub fn sorted_values<V: Ord>(self) -> MultiMapBuilderWithVals<BTreeSet<V>> {
++    pub fn sorted_values<V>(self) -> MultiMapBuilderWithVals<BTreeSet<V>>
++    where
++        V: Ord,
++    {
+         MultiMapBuilderWithVals::new()
+     }
+ }
+@@ -31,11 +36,17 @@
+         }
+     }
+ 
+-    pub fn hash_keys<K: Hash + Eq>(self) -> MultiMapBuilderWithKeysAndVals<HashMap<K, S>> {
++    pub fn hash_keys<K>(self) -> MultiMapBuilderWithKeysAndVals<HashMap<K, S>>
++    where
++        K: Hash + Eq,
++    {
+         MultiMapBuilderWithKeysAndVals::new()
+     }
+ 
+-    pub fn sorted_keys<K: Ord + Eq>(self) -> MultiMapBuilderWithKeysAndVals<BTreeMap<K, S>> {
++    pub fn sorted_keys<K>(self) -> MultiMapBuilderWithKeysAndVals<BTreeMap<K, S>>
++    where
++        K: Ord,
++    {
+         MultiMapBuilderWithKeysAndVals::new()
+     }
+ }
+@@ -44,7 +55,10 @@
+     _m: std::marker::PhantomData<M>,
+ }
+ 
+-impl<M: Map + Default> MultiMapBuilderWithKeysAndVals<M> {
++impl<M> MultiMapBuilderWithKeysAndVals<M>
++where
++    M: Map,
++{
+     pub fn new() -> Self {
+         MultiMapBuilderWithKeysAndVals {
+             _m: std::marker::PhantomData,
+@@ -54,4 +68,4 @@
+     pub fn build(self) -> MultiMap<M> {
+         MultiMap::new()
+     }
+-}
+\ No newline at end of file
++}
+Index: src/lib.rs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>#![feature(impl_trait_in_assoc_type)]\n#![warn(missing_docs)]\n\n\npub\nmod builder;\nmod sets;\nmod maps;\nmod multisets;\n\nuse std::borrow::Borrow;\nuse std::fmt::Debug;\nuse std::ops::RangeBounds;\nuse sets::Set;\nuse maps::Map;\nuse crate::maps::{Lookup, SortedMap};\nuse crate::sets::Container;\n\n\n#[derive(Default, Debug, PartialEq, Eq, Clone)]\npub struct MultiMap<M> {\n    data: M,\n    length: usize,\n}\n\nimpl<M: Default> MultiMap<M> {\n    fn new() -> Self {\n        MultiMap {\n            data: Default::default(),\n            length: 0,\n        }\n    }\n}\n\nimpl<M> MultiMap<M> where M: Map, M::Val: Set + Default {\n    fn insert(&mut self, key: M::Key, value: <<M as Map>::Val as Set>::Elem) -> bool {\n        if self.data.get_or_insert(key, Default::default).insert(value) {\n            self.length += 1;\n            true\n        } else {\n            false\n        }\n    }\n\n    fn contains<Q, R>(&mut self, key: &Q, value: &R) -> bool\n        where\n            M: Lookup<Q>,\n            M::Key: Borrow<Q>,\n            Q: ?Sized,\n            M::Val: Container<R>,\n            <<M as Map>::Val as Set>::Elem: Borrow<R>,\n            R: ?Sized\n    {\n        self.data.get(key).map_or(false, |set| set.contains(value))\n    }\n\n    fn contains_key<Q>(&self, key: &Q) -> bool where M: Lookup<Q>, M::Key: Borrow<Q>, Q: ?Sized {\n        self.data.contains_key(key)\n    }\n\n    fn remove<Q, R>(&mut self, key: &Q, value: &R) -> bool\n        where\n            M: Lookup<Q>,\n            M::Key: Borrow<Q>,\n            Q: ?Sized,\n            M::Val: Container<R>,\n            <<M as Map>::Val as Set>::Elem: Borrow<R>,\n            R: ?Sized\n    {\n        if let Some(set) = self.data.get_mut(key) {\n            if set.remove(value) {\n                self.length -= 1;\n                if set.is_empty() {\n                    self.data.remove(key);\n                }\n                return true;\n            }\n        }\n        false\n    }\n\n    fn remove_key<Q>(&mut self, key: &Q) -> bool where M: Lookup<Q>, M::Key: Borrow<Q>, Q: ?Sized {\n        self.data.remove(key)\n    }\n\n    fn get<Q>(&self, key: &Q) -> Option<&M::Val> where M: Lookup<Q>, M::Key: Borrow<Q>, Q: ?Sized {\n        self.data.get(key)\n    }\n\n    fn keys(&self) -> M::KeyIter<'_> {\n        self.data.keys()\n    }\n\n    fn values(&self) -> impl Iterator<Item=&<<M as Map>::Val as Set>::Elem> {\n        self.data.values().flat_map(|s| s.iter())\n    }\n\n    fn iter(&self) -> M::Iter<'_> {\n        self.data.iter()\n    }\n\n    fn flat_iter(&self) -> impl Iterator<Item=(&M::Key, &<<M as Map>::Val as Set>::Elem)> {\n        self.iter().flat_map(|(k, s)| s.iter().map(move |v| (k, v)))\n    }\n\n    fn is_empty(&self) -> bool {\n        self.data.is_empty()\n    }\n\n    fn num_keys(&self) -> usize {\n        self.data.len()\n    }\n\n    fn len(&self) -> usize {\n        self.length\n    }\n\n    fn range<Q, R>(&self, range: R) -> M::RangeIter<'_>\n        where\n            M: SortedMap<Q>,\n            M::Key: Borrow<Q>,\n            Q: ?Sized,\n            R: RangeBounds<Q>,\n    {\n        self.data.range(range)\n    }\n\n    fn flat_range<Q, R>(&self, range: R) -> impl Iterator<Item=(&M::Key, &<<M as Map>::Val as Set>::Elem)>\n        where\n            M: SortedMap<Q>,\n            M::Key: Borrow<Q>,\n            Q: ?Sized,\n            R: RangeBounds<Q>,\n    {\n        self.data.range(range).flat_map(|(k, s)| s.iter().map(move |v| (k, v)))\n    }\n}\n\n#[cfg(test)]\nmod tests {\n    use crate::builder::MultiMapBuilder;\n\n    #[test]\n    fn test_hash_multi_map_insert() {\n        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(!map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        assert!(!map.insert(2, 3));\n    }\n\n    #[test]\n    fn test_hash_multi_map_remove() {\n        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        assert!(map.remove(&1, &2));\n        assert!(!map.remove(&1, &2));\n        assert!(map.remove(&1, &3));\n        assert!(!map.remove(&1, &3));\n        assert!(map.remove(&2, &3));\n        assert!(!map.remove(&2, &3));\n    }\n\n    #[test]\n    fn test_hash_multi_map_contains() {\n        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        assert!(map.contains(&1, &2));\n        assert!(map.contains(&1, &3));\n        assert!(map.contains(&2, &3));\n        assert!(!map.contains(&1, &4));\n        assert!(!map.contains(&2, &4));\n    }\n\n    #[test]\n    fn test_hash_multi_map_contains_key() {\n        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        assert!(map.contains_key(&1));\n        assert!(map.contains_key(&2));\n        assert!(!map.contains_key(&3));\n    }\n\n    #[test]\n    fn test_hash_multi_map_get() {\n        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        assert!(map.get(&1).unwrap().contains(&2));\n        assert!(map.get(&1).unwrap().contains(&3));\n        assert!(map.get(&2).unwrap().contains(&3));\n        assert!(!map.get(&1).unwrap().contains(&4));\n        assert!(!map.get(&2).unwrap().contains(&4));\n        assert_eq!(map.get(&3), None);\n    }\n\n    #[test]\n    fn test_hash_multi_map_keys() {\n        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        let expected = vec![&1, &2];\n        let mut actual = map.keys().collect::<Vec<_>>();\n        actual.sort();\n        assert_eq!(actual, expected);\n    }\n\n    #[test]\n    fn test_hash_multi_map_values() {\n        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        let expected = vec![&2, &3, &3];\n        let mut actual = map.values().collect::<Vec<_>>();\n        actual.sort();\n        assert_eq!(actual, expected);\n    }\n\n    #[test]\n    fn test_hash_multi_map_flat_iter() {\n        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        let expected = vec![(&1, &2), (&1, &3), (&2, &3)];\n        let mut actual = map.flat_iter().collect::<Vec<_>>();\n        actual.sort();\n        assert_eq!(actual, expected);\n    }\n\n    #[test]\n    fn test_hash_multi_map_is_empty() {\n        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();\n        assert!(map.is_empty());\n        assert!(map.insert(1, 2));\n        assert!(!map.is_empty());\n        assert!(map.remove(&1, &2));\n        assert!(map.is_empty());\n    }\n\n    #[test]\n    fn test_hash_multi_map_num_values() {\n        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();\n        assert_eq!(map.len(), 0);\n        assert!(map.insert(1, 2));\n        assert_eq!(map.len(), 1);\n        assert!(map.insert(1, 3));\n        assert_eq!(map.len(), 2);\n        assert!(map.insert(2, 3));\n        assert_eq!(map.len(), 3);\n        assert!(map.remove(&1, &2));\n        assert_eq!(map.len(), 2);\n        assert!(map.remove(&1, &3));\n        assert_eq!(map.len(), 1);\n        assert!(map.remove(&2, &3));\n        assert_eq!(map.len(), 0);\n    }\n\n    #[test]\n    fn test_hash_multi_map_num_keys() {\n        let mut map = MultiMapBuilder::new().hash_values().hash_keys().build();\n        assert_eq!(map.num_keys(), 0);\n        assert!(map.insert(1, 2));\n        assert_eq!(map.num_keys(), 1);\n        assert!(map.insert(1, 3));\n        assert_eq!(map.num_keys(), 1);\n        assert!(map.insert(2, 3));\n        assert_eq!(map.num_keys(), 2);\n        assert!(map.remove(&1, &2));\n        assert_eq!(map.num_keys(), 2);\n        assert!(map.remove(&1, &3));\n        assert_eq!(map.num_keys(), 1);\n        assert!(map.remove(&2, &3));\n        assert_eq!(map.num_keys(), 0);\n    }\n\n    #[test]\n    fn test_sorted_multi_map_insert() {\n        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(!map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        assert!(!map.insert(2, 3));\n    }\n\n    #[test]\n    fn test_sorted_multi_map_remove() {\n        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        assert!(map.remove(&1, &2));\n        assert!(!map.remove(&1, &2));\n        assert!(map.remove(&1, &3));\n        assert!(!map.remove(&1, &3));\n        assert!(map.remove(&2, &3));\n        assert!(!map.remove(&2, &3));\n    }\n\n    #[test]\n    fn test_sorted_multi_map_contains() {\n        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        assert!(map.contains(&1, &2));\n        assert!(map.contains(&1, &3));\n        assert!(map.contains(&2, &3));\n        assert!(!map.contains(&1, &4));\n        assert!(!map.contains(&2, &4));\n    }\n\n    #[test]\n    fn test_sorted_multi_map_contains_key() {\n        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        assert!(map.contains_key(&1));\n        assert!(map.contains_key(&2));\n        assert!(!map.contains_key(&3));\n    }\n\n    #[test]\n    fn test_sorted_multi_map_get() {\n        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        assert!(map.get(&1).unwrap().contains(&2));\n        assert!(map.get(&1).unwrap().contains(&3));\n        assert!(map.get(&2).unwrap().contains(&3));\n        assert!(!map.get(&1).unwrap().contains(&4));\n        assert!(!map.get(&2).unwrap().contains(&4));\n        assert_eq!(map.get(&3), None);\n    }\n\n    #[test]\n    fn test_sorted_multi_map_keys() {\n        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        let expected = vec![&1, &2];\n        let actual = map.keys().collect::<Vec<_>>();\n        assert_eq!(actual, expected);\n    }\n\n    #[test]\n    fn test_sorted_multi_map_values() {\n        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        let expected = vec![&2, &3, &3];\n        let actual = map.values().collect::<Vec<_>>();\n        assert_eq!(actual, expected);\n    }\n\n    #[test]\n    fn test_sorted_multi_map_flat_iter() {\n        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        let expected = vec![(&1, &2), (&1, &3), (&2, &3)];\n        let actual = map.flat_iter().collect::<Vec<_>>();\n        assert_eq!(actual, expected);\n    }\n\n    #[test]\n    fn test_sorted_multi_map_is_empty() {\n        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();\n        assert!(map.is_empty());\n        assert!(map.insert(1, 2));\n        assert!(!map.is_empty());\n        assert!(map.remove(&1, &2));\n        assert!(map.is_empty());\n    }\n\n    #[test]\n    fn test_sorted_multi_map_len() {\n        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();\n        assert_eq!(map.len(), 0);\n        assert!(map.insert(1, 2));\n        assert_eq!(map.len(), 1);\n        assert!(map.insert(1, 3));\n        assert_eq!(map.len(), 2);\n        assert!(map.insert(2, 3));\n        assert_eq!(map.len(), 3);\n        assert!(map.remove(&1, &2));\n        assert_eq!(map.len(), 2);\n        assert!(map.remove(&1, &3));\n        assert_eq!(map.len(), 1);\n        assert!(map.remove(&2, &3));\n        assert_eq!(map.len(), 0);\n    }\n\n    #[test]\n    fn test_sorted_multi_map_range() {\n        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        assert!(map.insert(3, 4));\n        assert!(map.insert(4, 5));\n\n        let expected = vec![&3, &4];\n        let actual = map.range(2..=3).flat_map(|(_, s)| s.iter()).collect::<Vec<_>>();\n        assert_eq!(actual, expected);\n    }\n\n    #[test]\n    fn test_sorted_multi_map_flat_range() {\n        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        let expected = vec![(&1, &2), (&1, &3)];\n        let actual = map.flat_range(1..2).collect::<Vec<_>>();\n        assert_eq!(actual, expected);\n    }\n\n    #[test]\n    fn test_sorted_multi_map_remove_key() {\n        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();\n        assert!(map.insert(1, 2));\n        assert!(map.insert(1, 3));\n        assert!(map.insert(2, 3));\n        assert!(map.remove_key(&1));\n        assert!(!map.remove_key(&1));\n        assert!(map.remove_key(&2));\n        assert!(!map.remove_key(&2));\n    }\n\n    #[test]\n    fn test_borrowed_lookup_types() {\n        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();\n        map.insert(\"a\".to_string(), 1);\n        assert!(map.contains_key(\"a\"));\n        let a: String = \"a\".to_string();\n        assert!(map.contains_key(&a));\n    }\n\n    #[test]\n    fn test_borrowed_key_types() {\n        let mut map = MultiMapBuilder::new().sorted_values().sorted_keys().build();\n        map.insert(\"a\", 1);\n        assert!(map.range(\"a\"..\"b\").next().is_some());\n        assert!(map.contains_key(&\"a\"));\n        assert!(map.contains_key(&(\"a\".to_string())[..]));\n    }\n}\n\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/lib.rs b/src/lib.rs
+--- a/src/lib.rs	(revision a473ac115c3a397e8b50b1bb28422b26bca70cdf)
++++ b/src/lib.rs	(date 1708448697427)
+@@ -1,21 +1,18 @@
+ #![feature(impl_trait_in_assoc_type)]
+ #![warn(missing_docs)]
+ 
+-
+-pub
+-mod builder;
+-mod sets;
++pub mod builder;
+ mod maps;
+ mod multisets;
++mod sets;
+ 
++use crate::maps::{Lookup, SortedMap};
++use crate::sets::Container;
++use maps::Map;
++use sets::Set;
+ use std::borrow::Borrow;
+ use std::fmt::Debug;
+ use std::ops::RangeBounds;
+-use sets::Set;
+-use maps::Map;
+-use crate::maps::{Lookup, SortedMap};
+-use crate::sets::Container;
+-
+ 
+ #[derive(Default, Debug, PartialEq, Eq, Clone)]
+ pub struct MultiMap<M> {
+@@ -23,7 +20,10 @@
+     length: usize,
+ }
+ 
+-impl<M: Default> MultiMap<M> {
++impl MultiMap<M>
++where
++    M: Default,
++{
+     fn new() -> Self {
+         MultiMap {
+             data: Default::default(),
+@@ -32,7 +32,11 @@
+     }
+ }
+ 
+-impl<M> MultiMap<M> where M: Map, M::Val: Set + Default {
++impl<M> MultiMap<M>
++where
++    M: Map,
++    M::Val: Set + Default,
++{
+     fn insert(&mut self, key: M::Key, value: <<M as Map>::Val as Set>::Elem) -> bool {
+         if self.data.get_or_insert(key, Default::default).insert(value) {
+             self.length += 1;
+@@ -43,29 +47,34 @@
+     }
+ 
+     fn contains<Q, R>(&mut self, key: &Q, value: &R) -> bool
+-        where
+-            M: Lookup<Q>,
+-            M::Key: Borrow<Q>,
+-            Q: ?Sized,
+-            M::Val: Container<R>,
+-            <<M as Map>::Val as Set>::Elem: Borrow<R>,
+-            R: ?Sized
++    where
++        M: Lookup<Q>,
++        M::Key: Borrow<Q>,
++        Q: ?Sized,
++        M::Val: Container<R>,
++        <<M as Map>::Val as Set>::Elem: Borrow<R>,
++        R: ?Sized,
+     {
+         self.data.get(key).map_or(false, |set| set.contains(value))
+     }
+ 
+-    fn contains_key<Q>(&self, key: &Q) -> bool where M: Lookup<Q>, M::Key: Borrow<Q>, Q: ?Sized {
++    fn contains_key<Q>(&self, key: &Q) -> bool
++    where
++        M: Lookup<Q>,
++        M::Key: Borrow<Q>,
++        Q: ?Sized,
++    {
+         self.data.contains_key(key)
+     }
+ 
+     fn remove<Q, R>(&mut self, key: &Q, value: &R) -> bool
+-        where
+-            M: Lookup<Q>,
+-            M::Key: Borrow<Q>,
+-            Q: ?Sized,
+-            M::Val: Container<R>,
+-            <<M as Map>::Val as Set>::Elem: Borrow<R>,
+-            R: ?Sized
++    where
++        M: Lookup<Q>,
++        M::Key: Borrow<Q>,
++        Q: ?Sized,
++        M::Val: Container<R>,
++        <<M as Map>::Val as Set>::Elem: Borrow<R>,
++        R: ?Sized,
+     {
+         if let Some(set) = self.data.get_mut(key) {
+             if set.remove(value) {
+@@ -79,11 +88,21 @@
+         false
+     }
+ 
+-    fn remove_key<Q>(&mut self, key: &Q) -> bool where M: Lookup<Q>, M::Key: Borrow<Q>, Q: ?Sized {
++    fn remove_key<Q>(&mut self, key: &Q) -> bool
++    where
++        M: Lookup<Q>,
++        M::Key: Borrow<Q>,
++        Q: ?Sized,
++    {
+         self.data.remove(key)
+     }
+ 
+-    fn get<Q>(&self, key: &Q) -> Option<&M::Val> where M: Lookup<Q>, M::Key: Borrow<Q>, Q: ?Sized {
++    fn get<Q>(&self, key: &Q) -> Option<&M::Val>
++    where
++        M: Lookup<Q>,
++        M::Key: Borrow<Q>,
++        Q: ?Sized,
++    {
+         self.data.get(key)
+     }
+ 
+@@ -91,7 +110,7 @@
+         self.data.keys()
+     }
+ 
+-    fn values(&self) -> impl Iterator<Item=&<<M as Map>::Val as Set>::Elem> {
++    fn values(&self) -> impl Iterator<Item = &<<M as Map>::Val as Set>::Elem> {
+         self.data.values().flat_map(|s| s.iter())
+     }
+ 
+@@ -99,7 +118,7 @@
+         self.data.iter()
+     }
+ 
+-    fn flat_iter(&self) -> impl Iterator<Item=(&M::Key, &<<M as Map>::Val as Set>::Elem)> {
++    fn flat_iter(&self) -> impl Iterator<Item = (&M::Key, &<<M as Map>::Val as Set>::Elem)> {
+         self.iter().flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
+     }
+ 
+@@ -116,23 +135,28 @@
+     }
+ 
+     fn range<Q, R>(&self, range: R) -> M::RangeIter<'_>
+-        where
+-            M: SortedMap<Q>,
+-            M::Key: Borrow<Q>,
+-            Q: ?Sized,
+-            R: RangeBounds<Q>,
++    where
++        M: SortedMap<Q>,
++        M::Key: Borrow<Q>,
++        Q: ?Sized,
++        R: RangeBounds<Q>,
+     {
+         self.data.range(range)
+     }
+ 
+-    fn flat_range<Q, R>(&self, range: R) -> impl Iterator<Item=(&M::Key, &<<M as Map>::Val as Set>::Elem)>
+-        where
+-            M: SortedMap<Q>,
+-            M::Key: Borrow<Q>,
+-            Q: ?Sized,
+-            R: RangeBounds<Q>,
++    fn flat_range<Q, R>(
++        &self,
++        range: R,
++    ) -> impl Iterator<Item = (&M::Key, &<<M as Map>::Val as Set>::Elem)>
++    where
++        M: SortedMap<Q>,
++        M::Key: Borrow<Q>,
++        Q: ?Sized,
++        R: RangeBounds<Q>,
+     {
+-        self.data.range(range).flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
++        self.data
++            .range(range)
++            .flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
+     }
+ }
+ 
+@@ -417,7 +441,10 @@
+         assert!(map.insert(4, 5));
+ 
+         let expected = vec![&3, &4];
+-        let actual = map.range(2..=3).flat_map(|(_, s)| s.iter()).collect::<Vec<_>>();
++        let actual = map
++            .range(2..=3)
++            .flat_map(|(_, s)| s.iter())
++            .collect::<Vec<_>>();
+         assert_eq!(actual, expected);
+     }
+ 
+@@ -462,4 +489,3 @@
+         assert!(map.contains_key(&("a".to_string())[..]));
+     }
+ }
+-

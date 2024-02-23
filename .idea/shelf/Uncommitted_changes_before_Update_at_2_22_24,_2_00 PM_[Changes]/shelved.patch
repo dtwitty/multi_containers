@@ -1,0 +1,23 @@
+Index: src/lib.rs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>#![feature(impl_trait_in_assoc_type)]\n#![warn(missing_docs)]\n\n//! Containers for working with non-unique keys and values.\n\n/// Defines the `MultiMap` type.\npub mod multimap;\n\n/// Provides a convenient way to construct multi-maps.\npub mod multimap_builder;\n\n/// Defines the `MultiSet` type.\npub mod multiset;\n\n/// Provides a convenient way to construct multi-sets.\npub mod multiset_builder;\n\n/// Traits for working with maps.\npub mod maps;\n\n/// Traits for working with sets.\npub mod sets;\n\nmod examples;\nmod test_utils;\n\npub use crate::multimap::MultiMap;\npub use crate::multimap_builder::MultiMapBuilder;\npub use crate::multiset::MultiSet;\npub use crate::multiset_builder::MultiSetBuilder;\nuse std::collections::{HashMap, HashSet};\n\npub type HashMultiMap<K, V, S> = MultiMap<HashMap<K, HashSet<V, S>, S>>;\npub type HashMultiSet<K, S> = MultiSet<HashMap<K, usize, S>>;\npub type BTreeMultiMap<K, V> = MultiMap<HashMap<K, HashSet<V>>>;\npub type BTreeMultiSet<K> = MultiSet<HashMap<K, usize>>;\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/lib.rs b/src/lib.rs
+--- a/src/lib.rs	(revision dd47953c09e9461e2d40e16ad0c9792299f51d37)
++++ b/src/lib.rs	(date 1708637348342)
+@@ -28,9 +28,9 @@
+ pub use crate::multimap_builder::MultiMapBuilder;
+ pub use crate::multiset::MultiSet;
+ pub use crate::multiset_builder::MultiSetBuilder;
+-use std::collections::{HashMap, HashSet};
++use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+ 
+ pub type HashMultiMap<K, V, S> = MultiMap<HashMap<K, HashSet<V, S>, S>>;
+ pub type HashMultiSet<K, S> = MultiSet<HashMap<K, usize, S>>;
+-pub type BTreeMultiMap<K, V> = MultiMap<HashMap<K, HashSet<V>>>;
+-pub type BTreeMultiSet<K> = MultiSet<HashMap<K, usize>>;
++pub type BTreeMultiMap<K, V> = MultiMap<BTreeMap<K, BTreeSet<V>>>;
++pub type BTreeMultiSet<K> = MultiSet<BTreeMap<K, usize>>;
