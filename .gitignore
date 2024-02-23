@@ -10,3 +10,4 @@ target/
 *.pdb
 
 # Remove intellij files
+.idea/**/*
