@@ -90,7 +90,7 @@ where
         false
     }
 
-    /// Removes all mappings with the given key from the multi-map. Returns `true` if any mappings were present.
+    /// Removes all mappings with the given key from the multi-map. Returns the set of values that were removed, if any.
     pub fn remove_key<Q>(&mut self, key: &Q) -> Option<M::Val>
     where
         M: Lookup<Q>,
@@ -101,6 +101,7 @@ where
     }
 
     /// Returns a reference to the set of values for the given key, if there are any.
+    /// If the returned value is `Some`, it is guaranteed to be non-empty.
     pub fn get<Q>(&self, key: &Q) -> Option<&M::Val>
     where
         M: Lookup<Q>,
