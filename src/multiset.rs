@@ -1,5 +1,6 @@
 use crate::maps::{Lookup, Map, SortedMap};
 use std::borrow::Borrow;
+use std::mem::replace;
 use std::ops::RangeBounds;
 
 /// A set that allows duplicate elements.
@@ -39,6 +40,22 @@ where
         let prev = *have;
         *have += count;
         self.length += count;
+        prev
+    }
+
+    /// Sets the count of a value in the multi-set. Returns the previous count of the value.
+    pub fn set_count(&mut self, value: M::Key, count: usize) -> usize
+    where
+        M: Lookup<<M as Map>::Key>,
+    {
+        if count == 0 {
+            return self.remove_all(&value);
+        }
+
+        let have = self.map.get_or_insert(value, || 0_usize);
+        let prev = replace(have, count);
+        self.length += *have;
+        self.length -= prev;
         prev
     }
 
@@ -210,6 +227,16 @@ mod tests {
                     assert_eq!(set.insert_some(2, 3), 0);
                     assert_eq!(set.insert_some(2, 3), 3);
                     assert_eq!(set.insert_some(2, 3), 6);
+                }
+
+                #[test]
+                fn set_count() {
+                    let mut set = $set_maker;
+                    assert_eq!(set.set_count(1, 2), 0);
+                    assert_eq!(set.set_count(1, 2), 2);
+                    assert_eq!(set.set_count(2, 3), 0);
+                    assert_eq!(set.set_count(2, 3), 3);
+                    assert_eq!(set.set_count(2, 3), 3);
                 }
 
                 #[test]

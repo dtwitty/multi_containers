@@ -15,9 +15,9 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3c648362-a898-466a-a3a5-4fecbb9721d2" name="Changes" comment="Update docs to match readme">
+    <list default="true" id="3c648362-a898-466a-a3a5-4fecbb9721d2" name="Changes" comment="Update a comment">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/multimap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/multimap.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/multiset.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/multiset.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -214,14 +214,7 @@
       <workItem from="1707868001357" duration="102212000" />
       <workItem from="1708447033153" duration="38348000" />
       <workItem from="1708561128362" duration="18468000" />
-      <workItem from="1708987208248" duration="3000" />
-    </task>
-    <task id="LOCAL-00001" summary="a little more">
-      <created>1707950139297</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1707950139297</updated>
+      <workItem from="1708987208248" duration="1866000" />
     </task>
     <task id="LOCAL-00002" summary="even more!">
       <created>1707955785911</created>
@@ -559,7 +552,14 @@
       <option name="project" value="LOCAL" />
       <updated>1708644216478</updated>
     </task>
-    <option name="localTasksCounter" value="50" />
+    <task id="LOCAL-00050" summary="Update a comment">
+      <created>1708987244923</created>
+      <option name="number" value="00050" />
+      <option name="presentableId" value="LOCAL-00050" />
+      <option name="project" value="LOCAL" />
+      <updated>1708987244924</updated>
+    </task>
+    <option name="localTasksCounter" value="51" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -577,7 +577,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Modify API" />
     <MESSAGE value="Reformat types" />
     <MESSAGE value="Shuffle files" />
     <MESSAGE value="Get started on documentation" />
@@ -602,7 +601,8 @@
     <MESSAGE value="Bump cargo" />
     <MESSAGE value="Update readme" />
     <MESSAGE value="Update docs to match readme" />
-    <option name="LAST_COMMIT_MESSAGE" value="Update docs to match readme" />
+    <MESSAGE value="Update a comment" />
+    <option name="LAST_COMMIT_MESSAGE" value="Update a comment" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
