@@ -76,12 +76,13 @@ pub use crate::multimap_builder::MultiMapBuilder;
 pub use crate::multiset::MultiSet;
 pub use crate::multiset_builder::MultiSetBuilder;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::hash::RandomState;
 
 /// A multi-map that uses `HashMap` for the keys and `HashSet` for the values.
-pub type HashMultiMap<K, V, S> = MultiMap<HashMap<K, HashSet<V, S>, S>>;
+pub type HashMultiMap<K, V, S = RandomState> = MultiMap<HashMap<K, HashSet<V, S>, S>>;
 
 /// A multi-set that uses `HashMap` for the keys.
-pub type HashMultiSet<K, S> = MultiSet<HashMap<K, usize, S>>;
+pub type HashMultiSet<K, S = RandomState> = MultiSet<HashMap<K, usize, S>>;
 
 /// A multi-map that uses `BTreeMap` for the keys and `BTreeSet` for the values.
 pub type BTreeMultiMap<K, V> = MultiMap<BTreeMap<K, BTreeSet<V>>>;
