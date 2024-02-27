@@ -2,7 +2,8 @@
 
 //! This crate implements containers that can have duplicate values.
 //! If you have ever written a `HashMap<K, HashSet<V>>`, this crate is for you.
-//! This crate is unstable and its API is subject to change at any time until 1.0.0.
+//!
+//! **This crate is unstable and its API is subject to change at any time until 1.0.0**.
 //!
 //! This crate is comparable in spirit to these containers in other languages:
 //! - Java's `Guava` library's `Multimap` and `Multiset` (which heavily inspired this crate).
@@ -42,13 +43,6 @@
 //! assert_eq!(set.count(&1), 2);
 //! assert_eq!(set.count(&2), 3);
 //! ```
-//!
-//!
-//! ## To-Do
-//! - [ ] Add doctests and usage examples.
-//! - [ ] Implement common traits like `Extend`. This is blocked on `impl_trait_in_assoc_type` being stabilized.
-//! - [ ] Collect user feedback and improve the API before 1.0.0.
-//! - [ ] Explore concurrency options.
 
 /// Defines the `MultiMap` type.
 pub mod multimap;

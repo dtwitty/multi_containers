@@ -1,11 +1,11 @@
 [package]
 name = "multi_containers"
-version = "0.1.4"
+version = "0.2.0"
 edition = "2021"
 documentation = "https://docs.rs/multi_containers"
 repository = "https://github.com/dtwitty/multi_containers"
 license = "MIT"
-description = "A library for containers with duplicate entries"
+description = "Ergonomically work with multiple values per key"
 keywords = ["multiset", "multimap"]
 categories = ["data-structures"]
 readme = "README.md"
