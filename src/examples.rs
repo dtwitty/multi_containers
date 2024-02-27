@@ -55,7 +55,7 @@ mod tests {
             "The Rise of Endymion".to_string(),
         );
 
-        assert_eq!(map.len(), 20);
+        assert_eq!(map.num_mappings(), 20);
         assert_eq!(map.get("James S.A. Corey").unwrap().len(), 9);
         assert_eq!(map.get("Isaac Asimov").unwrap().len(), 7);
         assert_eq!(map.get("Dan Simmons").unwrap().len(), 4);

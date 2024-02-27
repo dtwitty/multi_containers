@@ -36,11 +36,9 @@ where
 
     /// Inserts a value into the multi-set `count` times. Returns the previous count of the value.
     pub fn insert_some(&mut self, value: M::Key, count: usize) -> usize {
-        let have = self.map.get_or_insert(value, || 0_usize);
-        let prev = *have;
-        *have += count;
         self.length += count;
-        prev
+        let have = self.map.get_or_insert(value, || 0_usize);
+        replace(have, *have + count)
     }
 
     /// Sets the count of a value in the multi-set. Returns the previous count of the value.
@@ -145,7 +143,7 @@ where
     }
 
     /// Returns an iterator over the unique values of the multi-set, with their counts.
-    pub fn iter_counts(&self) -> M::Iter<'_> {
+    pub fn counts(&self) -> M::Iter<'_> {
         self.map.iter()
     }
 
@@ -334,7 +332,7 @@ mod tests {
                     set.insert_some(1, 2);
                     set.insert_some(2, 3);
                     assert!(unordered_elements_are(
-                        set.iter_counts().map(|(k, v)| (k.clone(), v.clone())),
+                        set.counts().map(|(k, v)| (k.clone(), v.clone())),
                         vec![(1, 2), (2, 3)]
                     ));
                 }

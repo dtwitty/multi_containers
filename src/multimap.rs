@@ -116,19 +116,14 @@ where
         self.map.keys()
     }
 
-    /// Returns an iterator over the values of the multi-map.
-    pub fn values(&self) -> impl Iterator<Item = &<<M as Map>::Val as Set>::Elem> {
-        self.map.values().flat_map(|s| s.iter())
-    }
-
     /// Returns an iterator over the keys and value sets in the multi-map.
-    pub fn iter(&self) -> M::Iter<'_> {
+    pub fn value_sets(&self) -> M::Iter<'_> {
         self.map.iter()
     }
 
     /// Returns an iterator over the keys and values in the multi-map.
-    pub fn flat_iter(&self) -> impl Iterator<Item = (&M::Key, &<<M as Map>::Val as Set>::Elem)> {
-        self.iter().flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
+    pub fn mappings(&self) -> impl Iterator<Item = (&M::Key, &<<M as Map>::Val as Set>::Elem)> {
+        self.value_sets().flat_map(|(k, s)| s.iter().map(move |v| (k, v)))
     }
 
     /// Returns `true` if the multi-map is empty.
@@ -142,12 +137,12 @@ where
     }
 
     /// Returns the number of (key, value) mappings in the multi-map.
-    pub fn len(&self) -> usize {
+    pub fn num_mappings(&self) -> usize {
         self.length
     }
 
-    /// Returns an iterator over the entries of the multi-map within a range of keys.
-    pub fn range<Q, R>(&self, range: R) -> M::RangeIter<'_>
+    /// Returns an iterator over the keys and value sets in the multi-map within a range of keys.
+    pub fn value_sets_in_range<Q, R>(&self, range: R) -> M::RangeIter<'_>
     where
         M: SortedMap<Q>,
         M::Key: Borrow<Q>,
@@ -157,8 +152,8 @@ where
         self.map.range(range)
     }
 
-    /// Returns an iterator over the entries of the multi-map within a range of keys, with mutable references to the values.
-    pub fn flat_range<Q, R>(
+    /// Returns an iterator over the keys and values in the multi-map within a range of keys.
+    pub fn mappings_in_range<Q, R>(
         &self,
         range: R,
     ) -> impl Iterator<Item = (&M::Key, &<<M as Map>::Val as Set>::Elem)>
@@ -281,39 +276,26 @@ mod tests {
                 }
 
                 #[test]
-                fn test_values() {
-                    let mut map = $map_maker;
-                    assert_eq!(map.insert(1, 2), true);
-                    assert_eq!(map.insert(1, 3), true);
-                    assert_eq!(map.insert(2, 3), true);
-                    assert_eq!(map.insert(2, 4), true);
-                    assert!(unordered_elements_are(
-                        map.values().cloned(),
-                        vec![2, 3, 3, 4]
-                    ))
-                }
-
-                #[test]
-                fn test_iter() {
+                fn test_value_sets() {
                     let mut map = $map_maker;
                     assert_eq!(map.insert(1, 2), true);
                     assert_eq!(map.insert(2, 3), true);
                     assert!(unordered_elements_are(
-                        map.iter()
+                        map.value_sets()
                             .map(|(k, v)| (k.clone(), Vec::from_iter(v.iter().cloned()))),
                         vec![(1, vec![2]), (2, vec![3])]
                     ));
                 }
 
                 #[test]
-                fn test_flat_iter() {
+                fn test_mappings() {
                     let mut map = $map_maker;
                     assert_eq!(map.insert(1, 2), true);
                     assert_eq!(map.insert(1, 3), true);
                     assert_eq!(map.insert(2, 3), true);
                     assert_eq!(map.insert(2, 4), true);
                     assert!(unordered_elements_are(
-                        map.flat_iter().map(|(k, v)| (k.clone(), v.clone())),
+                        map.mappings().map(|(k, v)| (k.clone(), v.clone())),
                         vec![(1, 2), (1, 3), (2, 3), (2, 4)]
                     ));
                 }
@@ -345,25 +327,25 @@ mod tests {
                 }
 
                 #[test]
-                fn test_len() {
+                fn test_num_mappings() {
                     let mut map = $map_maker;
-                    assert_eq!(map.len(), 0);
+                    assert_eq!(map.num_mappings(), 0);
                     assert_eq!(map.insert(1, 2), true);
-                    assert_eq!(map.len(), 1);
+                    assert_eq!(map.num_mappings(), 1);
                     assert_eq!(map.insert(1, 3), true);
-                    assert_eq!(map.len(), 2);
+                    assert_eq!(map.num_mappings(), 2);
                     assert_eq!(map.insert(2, 3), true);
-                    assert_eq!(map.len(), 3);
+                    assert_eq!(map.num_mappings(), 3);
                     assert_eq!(map.insert(2, 4), true);
-                    assert_eq!(map.len(), 4);
+                    assert_eq!(map.num_mappings(), 4);
                     assert_eq!(map.remove(&1, &2), true);
-                    assert_eq!(map.len(), 3);
+                    assert_eq!(map.num_mappings(), 3);
                     assert_eq!(map.remove(&1, &3), true);
-                    assert_eq!(map.len(), 2);
+                    assert_eq!(map.num_mappings(), 2);
                     assert_eq!(map.remove(&2, &3), true);
-                    assert_eq!(map.len(), 1);
+                    assert_eq!(map.num_mappings(), 1);
                     assert_eq!(map.remove(&2, &4), true);
-                    assert_eq!(map.len(), 0);
+                    assert_eq!(map.num_mappings(), 0);
                 }
             }
         };
@@ -386,33 +368,43 @@ mod tests {
                 }
 
                 #[test]
-                fn test_iter_sorted() {
+                fn test_value_sets_sorted() {
                     let mut map = $map_maker;
                     assert_eq!(map.insert(1, 2), true);
                     assert_eq!(map.insert(2, 3), true);
                     assert_eq!(map.insert(2, 4), true);
                     assert_eq!(map.insert(3, 5), true);
-                    assert!(is_sorted(map.iter().map(|(k, _v)| k)));
+                    assert!(is_sorted(map.value_sets().map(|(k, _v)| k)));
                 }
 
                 #[test]
-                fn test_range_keys() {
+                fn test_mappings_sorted() {
                     let mut map = $map_maker;
                     assert_eq!(map.insert(1, 2), true);
                     assert_eq!(map.insert(2, 3), true);
                     assert_eq!(map.insert(2, 4), true);
                     assert_eq!(map.insert(3, 5), true);
-                    assert!(is_sorted(map.range(1..3).map(|(k, _v)| k)));
+                    assert!(is_sorted(map.mappings().map(|(k, _v)| k)));
                 }
 
                 #[test]
-                fn test_flat_range_keys() {
+                fn test_value_sets_in_range_keys() {
                     let mut map = $map_maker;
                     assert_eq!(map.insert(1, 2), true);
                     assert_eq!(map.insert(2, 3), true);
                     assert_eq!(map.insert(2, 4), true);
                     assert_eq!(map.insert(3, 5), true);
-                    assert!(is_sorted(map.flat_range(1..3).map(|(k, _v)| k)));
+                    assert!(is_sorted(map.value_sets_in_range(1..3).map(|(k, _v)| k)));
+                }
+
+                #[test]
+                fn test_mappings_in_range_keys() {
+                    let mut map = $map_maker;
+                    assert_eq!(map.insert(1, 2), true);
+                    assert_eq!(map.insert(2, 3), true);
+                    assert_eq!(map.insert(2, 4), true);
+                    assert_eq!(map.insert(3, 5), true);
+                    assert!(is_sorted(map.mappings_in_range(1..3).map(|(k, _v)| k)));
                 }
             }
         };
@@ -431,7 +423,7 @@ mod tests {
                     assert_eq!(map.insert(2, 3), true);
                     assert_eq!(map.insert(2, 4), true);
                     assert_eq!(map.insert(3, 5), true);
-                    for (_, set) in map.iter() {
+                    for (_, set) in map.value_sets() {
                         assert!(is_sorted(set.iter()));
                     }
                 }
