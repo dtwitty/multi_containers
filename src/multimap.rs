@@ -371,6 +371,18 @@ where
     }
 }
 
+impl <T, M> Extend<T> for MultiMap<M>
+where M: Map,
+      M::Val: Set + Default,
+      T: Into<(M::Key, <<M as Map>::Val as Set>::Elem)> {
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        for t in iter {
+            let (k, v) = t.into();
+            self.insert(k, v);
+        }
+    }
+}
+
 impl<T, M> FromIterator<T> for MultiMap<M>
 where
     M: Map + Default,
@@ -379,10 +391,7 @@ where
 {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let mut map = MultiMap::new();
-        for t in iter {
-            let (k, v) = t.into();
-            map.insert(k, v);
-        }
+        map.extend(iter);
         map
     }
 }

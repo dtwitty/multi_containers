@@ -380,6 +380,20 @@ where
     }
 }
 
+impl <T, M> Extend<T> for MultiSet<M>
+where
+    M: Map<Key = T, Val = usize>,
+{
+    fn extend<I>(&mut self, iter: I)
+    where
+        I: IntoIterator<Item = T>,
+    {
+        for value in iter {
+            self.insert(value);
+        }
+    }
+}
+
 impl<T, M> FromIterator<T> for MultiSet<M>
 where
     M: Map<Key = T, Val = usize> + Default,
@@ -389,9 +403,7 @@ where
         I: IntoIterator<Item = T>,
     {
         let mut set = MultiSet::default();
-        for value in iter {
-            set.insert(value);
-        }
+        set.extend(iter);
         set
     }
 }
