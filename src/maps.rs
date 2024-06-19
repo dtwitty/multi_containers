@@ -34,7 +34,7 @@ pub trait Map {
     /// Inserts a value into the map. Returns the previous value if it existed.
     fn insert(&mut self, key: Self::Key, value: Self::Val) -> Option<Self::Val>;
 
-    /// Inserts a value into the map if it does not exist. Returns a mutable reference to (maybe new) value.
+    /// Inserts a value into the map if it does not exist. Returns a mutable reference to the (maybe new) value.
     fn get_or_insert<F: Fn() -> Self::Val>(
         &mut self,
         key: Self::Key,
